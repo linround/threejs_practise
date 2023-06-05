@@ -3,7 +3,7 @@ function main(){
   const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({canvas})
 //   设置背景色
-  renderer.setClearColor(0x000000)
+  renderer.setClearColor(0xAAAAAA)
   // 启用阴影渲染
   renderer.shadowMap.enabled = true
 function makeCamera (fov=40) {
@@ -40,7 +40,8 @@ camera.lookAt(0,0,0)
   // 地面  平面几何
   const groundGeometry = new THREE.PlaneGeometry(50,50)
   // 地面材质
-  const groundMaterial = new THREE.MeshPhongMaterial({color:0xCC5555})
+  const groundMaterial = new THREE.MeshPhongMaterial({
+    color:0xbbb000})
   //使用材质和几何生成网格模型
   const groundMesh = new THREE.Mesh(groundGeometry,groundMaterial)
   groundMesh.rotation.x = Math.PI* -0.5
@@ -145,9 +146,9 @@ camera.lookAt(0,0,0)
 
 
   const targetGeometry = new THREE.SphereGeometry(
-    .5,6,3)
+    1,30,30)
   const targetMaterial = new THREE.MeshPhongMaterial({
-    color:0x00ff00,flatShading:true
+    color:0x543a3a,flatShading:true
   })
   const targetMesh = new THREE.Mesh(targetGeometry,targetMaterial)
 
