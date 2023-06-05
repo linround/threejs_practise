@@ -138,10 +138,34 @@ camera.lookAt(0,0,0)
   const turretPivot = new THREE.Object3D()
   turretPivot.position.y=1
   turretPivot.add(turretMesh)
-  // turretPivot.scale.set(5,5,5)
   turretMesh.position.z =  turretLength*0.5
   bodyMesh.add(turretPivot)
   turretPivot.lookAt(2,5,6)
+
+
+
+  const targetGeometry = new THREE.SphereGeometry(
+    .5,6,3)
+  const targetMaterial = new THREE.MeshPhongMaterial({
+    color:0x00ff00,flatShading:true
+  })
+  const targetMesh = new THREE.Mesh(targetGeometry,targetMaterial)
+
+  // 给该目标定义一个轨道
+  const targetOrbit = new THREE.Object3D()
+  // 目标高度
+  const targetElevation = new THREE.Object3D()
+  scene.add(targetOrbit)
+  targetOrbit.add(targetElevation)
+  targetElevation.position.z = 2*carLength
+  targetElevation.position.y = 8
+  targetElevation.add(targetMesh)
+
+
+
+
+
+
 
   const curve = new THREE.SplineCurve([
     new THREE.Vector2(-10,0),
@@ -178,6 +202,7 @@ camera.lookAt(0,0,0)
 
   const tankPosition = new THREE.Vector2()
   const tankTarget = new THREE.Vector2()
+  const targetPosition = new THREE.Vector3()
   function render(time) {
     time *= 0.001
     const canvas = renderer.domElement;
@@ -189,6 +214,12 @@ camera.lookAt(0,0,0)
       camera.aspect = canvas.clientWidth / canvas.clientHeight;
       camera.updateProjectionMatrix();
     });
+
+
+    // 移动目标点
+    targetOrbit.rotation.y = time*0.5
+
+
 
     const tankTime = time*0.05
     // 获取曲线上的某一点坐标
@@ -204,6 +235,9 @@ camera.lookAt(0,0,0)
       obj.rotation.x = time * 3;
     });
 
+
+    targetMesh.getWorldPosition(targetPosition)
+    turretPivot.lookAt(targetPosition)
 
 
     renderer.render(scene, camera);
