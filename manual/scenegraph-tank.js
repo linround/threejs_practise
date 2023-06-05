@@ -73,7 +73,7 @@ camera.lookAt(0,0,0)
   // 厚度
   const wheelThickness = 0.5
   // 圆的边数
-  const wheelSegments = 10
+  const wheelSegments = 6
 
   const wheelGeometry = new THREE.CylinderGeometry(
     wheelRadius,
@@ -143,6 +143,25 @@ camera.lookAt(0,0,0)
   bodyMesh.add(turretPivot)
   turretPivot.lookAt(2,5,6)
 
+  const curve = new THREE.SplineCurve([
+    new THREE.Vector2(-10,0),
+    new THREE.Vector2(-5,5),
+    new THREE.Vector2(0,0),
+    new THREE.Vector2(5,-5),
+    new THREE.Vector2(10,0),
+    new THREE.Vector2(5,10),
+    new THREE.Vector2(-5,10),
+    new THREE.Vector2(-10,-10),
+    new THREE.Vector2(-15,-8),
+    new THREE.Vector2(-10,0),
+  ])
+  const points = curve.getPoints(150)
+  const geometry = new THREE.BufferGeometry().setFromPoints(points)
+  const material = new THREE.LineBasicMaterial({color:0xfff000})
+  const splineObject = new THREE.Line(geometry,material)
+  splineObject.rotation.x = Math.PI*.5
+  splineObject.position.y=0.05
+  scene.add(splineObject)
 
 
 
@@ -155,6 +174,10 @@ camera.lookAt(0,0,0)
   const cameras = [
     { cam: camera, desc: 'detached camera', },
   ];
+
+
+  const tankPosition = new THREE.Vector2()
+  const tankTarget = new THREE.Vector2()
   function render(time) {
     time *= 0.001
     const canvas = renderer.domElement;
@@ -167,7 +190,24 @@ camera.lookAt(0,0,0)
       camera.updateProjectionMatrix();
     });
 
+    const tankTime = time*0.05
+    // 获取曲线上的某一点坐标
+    curve.getPointAt((tankTime%1),tankPosition)
+    // 获取下一点的坐标，即可以作为tank下一点的坐标
+    curve.getPointAt((tankTime+0.01)%1,tankTarget)
+
+    // 设置tank的新的位置
+    tank.position.set(tankPosition.x,0,tankPosition.y)
+    // 设置tank的转向
+    tank.lookAt(tankTarget.x,0,tankTarget.y)
+    wheelMeshes.forEach((obj) => {
+      obj.rotation.x = time * 3;
+    });
+
+
+
     renderer.render(scene, camera);
+    requestAnimationFrame(render)
   }
 
   requestAnimationFrame(render)
