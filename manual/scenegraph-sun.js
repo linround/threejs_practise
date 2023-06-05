@@ -6,6 +6,11 @@ const gui = new GUI();
 const canvas = document.querySelector('#c');
 const renderer = new THREE.WebGLRenderer({canvas});
 
+// 渲染器默认背景是黑色
+// setClearColor 设置渲染器背景色
+renderer.setClearColor(0x000000,0.8);
+// 用来生成平行光的阴影
+renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
 
