@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import GUI from 'lil-gui';
+
+const gui = new GUI();
 
 function main(){
 
@@ -12,8 +15,6 @@ function main(){
     return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
   }
   const camera = makeCamera()
-//   放置视锥体位置
-  camera.position.set(8,4,10).multiplyScalar(3)
 //   相机朝向
   camera.lookAt(0,0,0)
 
