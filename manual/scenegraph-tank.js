@@ -60,7 +60,14 @@ camera.lookAt(0,0,0)
 
   // 车体
   const bodyGeometry = new THREE.BoxGeometry(carWidth,carHeight,carLength)
-  const bodyMaterial = new THREE.MeshPhongMaterial({color:0x6688AA})
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color:0x6688AA,
+    flatShading:true,
+    shininess:1500, // 反光度
+    emissive:'black',// 材质自发光属性
+    roughness:0.5,// 粗糙程度
+    metalness:0.5,//金属光泽
+  })
   const bodyMesh = new THREE.Mesh(bodyGeometry,bodyMaterial)
   // 这里设置的是顶部的高度
   bodyMesh.position.y=1.4
@@ -106,8 +113,8 @@ camera.lookAt(0,0,0)
    */
   const domeRadius = 2
   // 与球体的细腻程度相关
-  const domeWidthSubDivisions = 12
-  const domeHeightSubDivisions = 12
+  const domeWidthSubDivisions = 500
+  const domeHeightSubDivisions = 500
   // 方位角(赤道面（由 x 轴与 y 轴确定的平面）上起始于 x 轴，沿逆时针方向量出的角度，通常用 φ 表示。)
   const domePhiStart = 0
   const domePhiEnd = Math.PI*2
@@ -146,9 +153,15 @@ camera.lookAt(0,0,0)
 
 
   const targetGeometry = new THREE.SphereGeometry(
-    1,30,30)
-  const targetMaterial = new THREE.MeshPhongMaterial({
-    color:0x543a3a,flatShading:true
+    1,10,10)
+  const targetMaterial = new THREE.MeshStandardMaterial({
+    color:0x543a3a,
+    flatShading:true,// 决定物体看起来是多面的（true）还是光滑的（false）
+    shininess:1500, // 反光度
+    emissive:'black',// 材质自发光属性
+    roughness:0.5,// 粗糙程度
+    metalness:0.5,//金属光泽
+    side:THREE.DoubleSide
   })
   const targetMesh = new THREE.Mesh(targetGeometry,targetMaterial)
 
