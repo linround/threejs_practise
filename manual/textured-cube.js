@@ -51,7 +51,7 @@ function main(){
   // 创建纹理 利用图片
   // 这里不需要等待纹理加载完成，而是立刻开始渲染
 
-  const texture = loader.load('./resources/images/wall.jpg');
+  const texture = loader.load('./resources/images/sun-set.jpg');
   const material = new THREE.MeshBasicMaterial({
     map:texture,
   })
