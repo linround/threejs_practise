@@ -135,9 +135,15 @@ function main(){
 
     gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
     gui.add(light, 'intensity', 0, 2, 0.01);
-    gui.add(light.target.position, 'x', -10, 10, .01);
-    gui.add(light.target.position, 'z', -10, 10, .01);
-    gui.add(light.target.position, 'y', 0, 10, .01);
+    gui.add(light.target.position, 'x', -10, 10, .01).onChange(()=>{
+      helper.update()
+    });
+    gui.add(light.target.position, 'z', -10, 10, .01).onChange(()=>{
+      helper.update()
+    });
+    gui.add(light.target.position, 'y', 0, 10, .01).onChange(()=>{
+      helper.update()
+    });
   }
 
 
