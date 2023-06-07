@@ -27,20 +27,16 @@ function main(){
 
   const intensity = 1;
   // 添加一个环境光
-  // const light = new THREE.AmbientLight(color, intensity);
-
-  // 添加半球光
-  const light = new THREE.DirectionalLight(
+  const ambientLight = new THREE.AmbientLight('green', 1);
+  scene.add(ambientLight)
+  // 添加点光源 点光源发散的照射所有的方向
+  const light = new THREE.PointLight(
     color,intensity
   )
   light.position.y = 10
-  // 设置光的目标位置  直线光会照向对应得光的目标位置
-  light.target.position.set(-5, 0, 0);
   scene.add(light);
-  // 需要将光先目标加入到场景中，这样光线得方向效果才会体现在场景中
-  scene.add(light.target);
 
-  const helper = new THREE.DirectionalLightHelper(light)
+  const helper = new THREE.PointLightHelper(light)
   scene.add(helper)
 
 
@@ -146,13 +142,14 @@ function main(){
 
 
     function updateLight() {
-      light.target.updateMatrixWorld();
       helper.update();
     }
 
 
+    // 电光源照射道德距离
+
+    gui.add(light, 'distance', 0, 40).onChange(updateLight);
     makeXYZGUI(gui, light.position, 'position', updateLight)
-    makeXYZGUI(gui, light.target.position, 'target', updateLight);
   }
 
 

@@ -27,20 +27,20 @@ function main(){
 
   const intensity = 1;
   // 添加一个环境光
-  // const light = new THREE.AmbientLight(color, intensity);
-
-  // 添加半球光
-  const light = new THREE.DirectionalLight(
+  const ambientLight = new THREE.AmbientLight('green', 1);
+  scene.add(ambientLight)
+  // 添加一个聚光灯
+  // 聚光灯和点光源类型。但是光纤只照射这个锥体内部的物体
+  const light = new THREE.SpotLight(
     color,intensity
   )
   light.position.y = 10
-  // 设置光的目标位置  直线光会照向对应得光的目标位置
-  light.target.position.set(-5, 0, 0);
-  scene.add(light);
-  // 需要将光先目标加入到场景中，这样光线得方向效果才会体现在场景中
-  scene.add(light.target);
 
-  const helper = new THREE.DirectionalLightHelper(light)
+  light.target.position.set(-5, 0, 0);
+  scene.add(light.target)
+  scene.add(light);
+
+  const helper = new THREE.SpotLightHelper(light)
   scene.add(helper)
 
 
@@ -119,7 +119,18 @@ function main(){
 
 
   {
-
+    class DegRadHelper {
+      constructor(obj, prop) {
+        this.obj = obj;
+        this.prop = prop;
+      }
+      get value() {
+        return THREE.MathUtils.radToDeg(this.obj[this.prop]);
+      }
+      set value(v) {
+        this.obj[this.prop] = THREE.MathUtils.degToRad(v);
+      }
+    }
     class ColorGUIHelper {
       constructor(object, prop) {
         this.object = object;
@@ -140,19 +151,25 @@ function main(){
       folder.add(vector3,'z',-10,10).onChange(onChangeFn)
       folder.open()
     }
+    gui.add(new DegRadHelper(light, 'angle'), 'value', 0, 90).name(
+      'angle').onChange(updateLight);
+    light.angle = 1
+    // 光纤减弱
+    gui.add(light, 'penumbra', 0, 1, 0.01);
 
     gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
     gui.add(light, 'intensity', 0, 2, 0.01)
 
 
     function updateLight() {
-      light.target.updateMatrixWorld();
       helper.update();
     }
 
 
+    // 电光源照射道德距离
+
+    gui.add(light, 'distance', 0, 40).onChange(updateLight);
     makeXYZGUI(gui, light.position, 'position', updateLight)
-    makeXYZGUI(gui, light.target.position, 'target', updateLight);
   }
 
 
