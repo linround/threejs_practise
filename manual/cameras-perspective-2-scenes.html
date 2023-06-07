@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>cameras-perspective</title>
+    <script type="module" src="./cameras-perspective-2-scenes.js"></script>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .split {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
+      .split>div {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="split">
+    <div id="view1" tabindex="1"></div>
+    <div id="view2" tabindex="2"></div>
+</div>
+</body>
+</html>

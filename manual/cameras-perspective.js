@@ -1,10 +1,31 @@
 import * as THREE from 'three'
 import {OrbitControls} from 'three/addons/controls/OrbitControls';
 import GUI from 'lil-gui';
-import {RectAreaLightHelper} from "three/addons/helpers/RectAreaLightHelper";
-
 
 const gui = new GUI();
+
+class MinMaxGUIHelper {
+  constructor(obj, minProp, maxProp, minDif) {
+    this.obj = obj;
+    this.minProp = minProp;
+    this.maxProp = maxProp;
+    this.minDif = minDif;
+  }
+  get min() {
+    return this.obj[this.minProp];
+  }
+  set min(v) {
+    this.obj[this.minProp] = v;
+    this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
+  }
+  get max() {
+    return this.obj[this.maxProp];
+  }
+  set max(v) {
+    this.obj[this.maxProp] = v;
+    this.min = this.min;  // this will call the min setter
+  }
+}
 function main(){
   const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({canvas})
@@ -17,39 +38,26 @@ function main(){
   }
   const camera = makeCamera()
   camera.position.set(0,10,20)
-
+  function updateCamera() {
+    camera.updateProjectionMatrix();
+  }
   const controls = new OrbitControls(camera,canvas)
 
-  controls.target.set(0, 5, 0);
-  controls.update();
   // 建立一个场景节点
   const scene = new THREE.Scene()
 
   const color = 0xFFFFFF;
-
   const intensity = 1;
   // 添加一个环境光
-  const ambientLight = new THREE.AmbientLight('black', 1);
-  scene.add(ambientLight)
-  // 添加一个矩形区域光
-  const width = 12
-  const height = 4
-  const light = new THREE.RectAreaLight(
-    color,intensity,width,height
-  )
+  const light = new THREE.DirectionalLight(color, intensity);
   light.position.y = 10
-  light.rotation.x = THREE.MathUtils.degToRad(-45);
-
+  light.target.position.x = -5
   scene.add(light);
-
-  const helper = new RectAreaLightHelper(light)
-  light.add(helper)
-
-
+  scene.add(light.target)
 
   {
     // 地平面
-    const planeSize = 40
+    const planeSize = 400
     const loader = new THREE.TextureLoader()
     const texture = loader.load('./resources/images/checker.png')
     texture.wrapS = THREE.RepeatWrapping
@@ -59,9 +67,8 @@ function main(){
     const repeats = planeSize/2
     texture.repeat.set(repeats,repeats)
 
-    // 矩形光照  只对MeshStandardMaterial  和 MeshPhysicalMaterial有效
     const planeGeo = new THREE.PlaneGeometry(planeSize,planeSize)
-    const planeMat = new THREE.MeshStandardMaterial({
+    const planeMat = new THREE.MeshPhongMaterial({
       map:texture,
       side:THREE.DoubleSide
     })
@@ -77,7 +84,7 @@ function main(){
     const cubeGeo = new THREE.BoxGeometry(
       cubeSize,cubeSize,cubeSize
     )
-    const cubeMat = new THREE.MeshStandardMaterial({
+    const cubeMat = new THREE.MeshPhongMaterial({
       color:'#8AC'
     })
     const mesh = new THREE.Mesh(
@@ -97,7 +104,7 @@ function main(){
     const sphereGeo = new THREE.SphereGeometry(
       sphereRadius,sphereWidthDivision,sphereHeightDivision
     )
-    const sphereMat = new THREE.MeshStandardMaterial(
+    const sphereMat = new THREE.MeshPhongMaterial(
       {
         color:'#ca8'
       }
@@ -122,18 +129,7 @@ function main(){
 
 
   {
-    class DegRadHelper {
-      constructor(obj, prop) {
-        this.obj = obj;
-        this.prop = prop;
-      }
-      get value() {
-        return THREE.MathUtils.radToDeg(this.obj[this.prop]);
-      }
-      set value(v) {
-        this.obj[this.prop] = THREE.MathUtils.degToRad(v);
-      }
-    }
+
     class ColorGUIHelper {
       constructor(object, prop) {
         this.object = object;
@@ -147,25 +143,15 @@ function main(){
       }
     }
 
-    function makeXYZGUI(gui,vector3,name,onChangeFn) {
-      const folder = gui.addFolder(name)
-      folder.add(vector3,'x',-10,10).onChange(onChangeFn)
-      folder.add(vector3,'y',0,10).onChange(onChangeFn)
-      folder.add(vector3,'z',-10,10).onChange(onChangeFn)
-      folder.open()
-    }
-    gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-    gui.add(light, 'intensity', 0, 2, 0.01)
-    gui.add(light, 'width', 0, 20);
-    gui.add(light, 'height', 0, 20);
-    gui.add(new DegRadHelper(light.rotation, 'x'), 'value', -180, 180).name('x rotation');
-    gui.add(new DegRadHelper(light.rotation, 'y'), 'value', -180, 180).name('y rotation');
-    gui.add(new DegRadHelper(light.rotation, 'z'), 'value', -180, 180).name('z rotation');
+    gui.add(camera, 'fov', 1, 180).onChange(updateCamera);
+    const minMaxGUIHelper = new MinMaxGUIHelper(
+      camera, 'near', 'far', 0.1
+    );
+    gui.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1)
+      .name('near').onChange(updateCamera);
+    gui.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1)
+      .name('far').onChange(updateCamera);
 
-
-
-
-    makeXYZGUI(gui, light.position, 'position')
   }
 
 
