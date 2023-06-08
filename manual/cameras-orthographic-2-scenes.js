@@ -46,13 +46,14 @@ function main(){
   // 越靠近中心点的就是顶部
   const top = 0
   const bottom = 300
-  const near = -1
-  const far = 1
+  const near = -10
+  const far = 10
   // camera渲染了一个平面
   const camera = new THREE.OrthographicCamera(
     left,right,top,bottom,near,far
   )
 
+  camera.rotation.z = -Math.PI*0.5
   camera.zoom = 1
   // camera.position.set(0,10,20)
   function updateCamera() {
@@ -126,7 +127,9 @@ function main(){
 
   {
     const planeSize = 20;
-    const planeGeo = new THREE.PlaneGeometry(planeSize,planeSize)
+
+    const planeGeo = new THREE.BoxGeometry(planeSize,planeSize,planeSize)
+    // const planeGeo = new THREE.BoxGeometry(planeSize,planeSize)
     const loader = new THREE.TextureLoader();
     const textures = [
       loader.load('./resources/images/flower-1.jpg'),
