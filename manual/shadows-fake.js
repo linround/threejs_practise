@@ -92,7 +92,7 @@ function main(){
     )
 
     // 添加15个球体
-    const numSpheres = 1000
+    const numSpheres = 15
     for (let i=0;i<numSpheres;i++){
       const base = new THREE.Object3D()
       scene.add(base)
@@ -183,9 +183,19 @@ function main(){
 
 
 
-
-
-
+  const vectors = [
+    new THREE.Vector3(0,0,0)
+  ]
+  {
+    const curve = new THREE.SplineCurve(vectors)
+    const points = curve.getPoints(150)
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    const material = new THREE.LineBasicMaterial({
+      color: 'red'
+    })
+    const splineObject = new THREE.Line(geometry, material)
+    scene.add(splineObject)
+  }
 
 
 
@@ -213,6 +223,8 @@ function main(){
 
         const yOff = Math.abs(Math.sin(time*2+ndx))
         sphereMesh.position.y = y + THREE.MathUtils.lerp(-distanceY,0,yOff)
+
+
         shadowMesh.material.opacity = THREE.MathUtils.lerp(1,.0,yOff)
       })
     }

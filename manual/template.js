@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import GUI from 'lil-gui';
+import {OrbitControls} from 'three/addons/controls/OrbitControls';
 
 const gui = new GUI();
 
@@ -20,6 +21,10 @@ function main(){
 
   // 建立一个场景节点
   const scene = new THREE.Scene()
+
+  const controls = new OrbitControls(camera,canvas)
+  controls.target.set(0, 5, 0);
+  controls.update();
   // 在场景中添加光源
   {
     // 创建平行光
