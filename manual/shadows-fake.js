@@ -60,6 +60,8 @@ function main(){
   const shadowTexture = loader.load('./resources/images/roundshadow.png')
 
   const sphereShadowBases = []
+
+  const distanceY = 5
   {
     const sphereRadius = 1
     const sphereWidthDivisions = 32
@@ -69,11 +71,14 @@ function main(){
     )
 
     {
-      const sphereStaticMat = new THREE.MeshBasicMaterial()
+      const sphereStaticMat = new THREE.MeshBasicMaterial({
+        color:'red'
+      })
       const meshStatic = new THREE.Mesh(
         sphereGeo,sphereStaticMat
       )
-      meshStatic.position.y = 2
+
+      meshStatic.position.y = distanceY
       scene.add(meshStatic)
     }
 
@@ -87,7 +92,7 @@ function main(){
     )
 
     // 添加15个球体
-    const numSpheres = 15
+    const numSpheres = 1000
     for (let i=0;i<numSpheres;i++){
       const base = new THREE.Object3D()
       scene.add(base)
@@ -122,7 +127,7 @@ function main(){
       const sphereMesh = new THREE.Mesh(
         sphereGeo,sphereMat
       )
-      sphereMesh.position.set(0,sphereRadius + 2,0)
+      sphereMesh.position.set(0,sphereRadius + distanceY,0)
       base.add(sphereMesh)
 
 
@@ -207,8 +212,8 @@ function main(){
         base.position.set(Math.cos(angle)*radius,0,Math.sin(angle)*radius)
 
         const yOff = Math.abs(Math.sin(time*2+ndx))
-        sphereMesh.position.y = y + THREE.MathUtils.lerp(-2,0,yOff)
-        shadowMesh.material.opacity = THREE.MathUtils.lerp(1,.25,yOff)
+        sphereMesh.position.y = y + THREE.MathUtils.lerp(-distanceY,0,yOff)
+        shadowMesh.material.opacity = THREE.MathUtils.lerp(1,.0,yOff)
       })
     }
 
