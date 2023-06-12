@@ -16,7 +16,9 @@ function main(){
     return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
   }
   const camera = makeCamera()
-  camera.position.z = 3
+  camera.position.y = 10
+  camera.position.z = 30
+  camera.position.x = 10
   // 相机朝向
   camera.lookAt(0,0,0)
 
@@ -207,7 +209,7 @@ function main(){
       const angle = ringU*Math.PI*2
       //
       temp.fromArray(cache,i)
-      temp.multiplyScalar(THREE.MathUtils.lerp(0,1,Math.sin(angle+ringId+time)*1+0.2))
+      temp.multiplyScalar(THREE.MathUtils.lerp(0,1,(angle+ringId)*1+0.2))
       temp.toArray(positions,i)
 
     }
