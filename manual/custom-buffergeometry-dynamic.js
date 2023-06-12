@@ -32,8 +32,12 @@ function main(){
     light.position.set(...pos)
     scene.add(light)
   }
-  addLight(-1,2,4)
-  addLight(2,-2,3)
+  addLight(5,0,0)
+  addLight(0,5,0)
+  addLight(0,0,5)
+  addLight(0,0,5)
+  addLight(5,5,5)
+  addLight(-5,-5,-5)
 
   function makeSpherePosition(segmentsAround,segmentsDown){
     // 顶点数
