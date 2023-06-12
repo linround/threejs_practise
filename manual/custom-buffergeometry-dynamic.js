@@ -207,7 +207,7 @@ function main(){
       const angle = ringU*Math.PI*2
       //
       temp.fromArray(cache,i)
-      temp.multiplyScalar(THREE.MathUtils.lerp(1,1.4,Math.sin(angle+ringId)*1))
+      temp.multiplyScalar(THREE.MathUtils.lerp(0,1,Math.sin(angle+ringId+time)*1+0.2))
       temp.toArray(positions,i)
 
     }
