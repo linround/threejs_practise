@@ -111,7 +111,9 @@ function main(){
 
   // 发生change事件
   // renderRequested false => renderRequested = true,防止render触发过快;触发render
-  // render函数中 在触发控制器update之前 设置renderRequested=false,方便下一次触发change事件，再继续触发render
+  // render函数中 在触发控制器update之前 设置renderRequested=false,方便下一次触发change事件，再继续触发render，render
+  //  render函数中始终会设置 renderRequested = false
+  // 由于阻尼的存在 直到最终不再触发change事件
   function requestRenderIfNotRequested(){
     console.log('88')
     if(!renderRequested) {
