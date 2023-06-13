@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>tips-transparent-canvas</title>
+    <script type="module" src="./tips-transparent-canvas.js"></script>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      #content {
+        font-size: 7vw;
+        font-family: sans-serif;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+</head>
+<body>
+<div id="content">
+    <div>
+        <h1>Cubes-R-Us!</h1>
+        <p>We make the best cubes!</p>
+    </div>
+</div>
+<canvas id="c"></canvas>
+</body>
+</html>

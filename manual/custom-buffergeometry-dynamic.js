@@ -140,7 +140,7 @@ function main(){
     const material = new THREE.MeshPhongMaterial({
       color,
       side: THREE.DoubleSide,
-      shininess:100,// 光滑程度。与反光有关
+      shininess:1000,// 光滑程度。与反光有关
     })
     const cube = new THREE.Mesh(geometry,material)
     scene.add(cube)
