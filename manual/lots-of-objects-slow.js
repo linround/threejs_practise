@@ -49,7 +49,7 @@ function main(){
 
   {
     const loader = new THREE.TextureLoader();
-    const texture = loader.load('resources/images/checker.png', render);
+    const texture = loader.load('resources/images/world.jpg', render);
     // texture.wrapS=THREE.RepeatWrapping
     // texture.wrapT=THREE.RepeatWrapping
     // // 对纹理细节所做的mipmap
@@ -103,6 +103,40 @@ window.THREE = THREE
     positionHelper.position.z = 1
     latHelper.add(positionHelper)
 
+    const lonFudge = Math.PI*.5
+    const latFudge = Math.PI*-0.135
+
+    // 纬度 赤道是最长的纬线
+    data.forEach((row,latNdx)=>{
+      // 经线圈
+      row.forEach((value,lonNdx)=>{
+        if(value===undefined){
+          return
+        }
+        const amount = (value-min)/range
+        const material = new THREE.MeshBasicMaterial()
+        const hue = THREE.MathUtils.lerp(0.7,0.3,amount)
+        const saturation = 1
+
+        const lightness = THREE.MathUtils.lerp(0.7,.3,amount)
+
+        material.color.setHSL(hue,saturation,lightness)
+        const mesh = new THREE.Mesh(geometry,material)
+        scene.add(mesh)
+
+        lonHelper.rotation.y = THREE.MathUtils.degToRad(
+          lonNdx+file.xllcorner) + lonFudge
+        latHelper.rotation.x = THREE.MathUtils.degToRad(
+          latNdx+file.yllcorner) + latFudge
+
+
+        positionHelper.updateWorldMatrix(true,false)
+        mesh.applyMatrix4(positionHelper.matrixWorld)
+        mesh.scale.set(
+          0.005,0.005,THREE.MathUtils.lerp(0.01,0.5,amount)
+        )
+      })
+    })
   }
 
 
@@ -135,11 +169,49 @@ window.THREE = THREE
 
 
 
+  // 加载文本文件
+  async function loadFile(url){
+    const req = await fetch(url)
+    return req.text()
+  }
+  // 解析文本
+  // 有几行是键值对
+  // 余下的是数据点
+  function parseData(text){
+    const data = []
+    const settings = {data}
+    let max
+    let min
+    text.split('\n').forEach(line=>{
+      const parts = line.trim().split(/\s+/)
+      if(parts.length === 2){
+        // 这是键值对
+        settings[parts[0]] = parseFloat(parts[1])
+      } else if(parts.length>2){
+
+        // 所有的数据在
+        const values = parts.map(v=>{
+          const value = parseFloat(v)
+          if (value === settings.NODATA_value) {
+            return undefined;
+          }
+          max = Math.max(max===undefined?value:max,value)
+          min = Math.min(min===undefined?value:min,value)
+          return value
+        })
+        data.push(values)
+      }
+    })
+    const result = {...settings,min,max,}
+    console.log(result)
+    return result
+  }
 
 
-
-
-
+  loadFile('./resources/data/gpw/gpw_v4_basic_demographic_characteristics_rev10_a000_014mt_2010_cntm_1_deg.asc')
+    .then(parseData)
+    .then(addBoxes)
+    .then(render);
 
 
 
