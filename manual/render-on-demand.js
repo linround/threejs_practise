@@ -84,7 +84,6 @@ function main(){
 
 
 
-
   // 这里的time是毫秒级别
   function render(time){
     time *= 0.001

@@ -65,6 +65,15 @@ function main(){
   makeInstance(geometry, 0x8844aa, -2);
   makeInstance(geometry, 0xaa8844,  2);
 
+  {
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('resources/images/world.jpg', render);
+    // 纹理映射
+    // 通常几何信息中包含自己的uv坐标
+    const geometry = new THREE.SphereGeometry(1, 20, 20);
+    const material = new THREE.MeshBasicMaterial({map: texture});
+    scene.add(new THREE.Mesh(geometry, material));
+  }
 
 
 
