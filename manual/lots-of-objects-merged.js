@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import GUI from 'lil-gui';
 import {OrbitControls} from 'three/addons/controls/OrbitControls';
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils"
 
 const gui = new GUI();
 
@@ -77,22 +78,36 @@ function main(){
 
 
 
-window.THREE = THREE
+  window.THREE = THREE
 
   function addBoxes(file){
+    console.log('***addBox')
     const {min,max,data} = file
     const range = max - min
 
-    const boxWidth = 1
-    const boxHeight = 1
-    const boxDepth = 1
-    const geometry = new THREE.BoxGeometry(
-      boxWidth,boxHeight,boxDepth
-    )
-    // 该球体会在z轴平移0.5
-    geometry.applyMatrix4(
-      new THREE.Matrix4().makeTranslation(0,0,0.5)
-    )
+    // const boxWidth = 1
+    // const boxHeight = 1
+    // const boxDepth = 1
+    // const geometry = new THREE.BoxGeometry(
+    //   boxWidth,boxHeight,boxDepth
+    // )
+    // // 该球体会在z轴平移0.5
+    // geometry.applyMatrix4(
+    //   new THREE.Matrix4().makeTranslation(0,0,0.5)
+    // )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     const lonHelper = new THREE.Object3D()
     scene.add(lonHelper)
@@ -103,8 +118,27 @@ window.THREE = THREE
     positionHelper.position.z = 1
     latHelper.add(positionHelper)
 
+
+
+    // 优化后的代码
+    const originHelper = new THREE.Object3D()
+    originHelper.position.z = 0.5
+    positionHelper.add(originHelper)
+    const geometries = []
+
+
+
+
+
+
+
+
+
+
     const lonFudge = Math.PI*.5
     const latFudge = Math.PI*-0.135
+
+    const color = new THREE.Color()
 
     // 纬度 赤道是最长的纬线
     data.forEach((row,latNdx)=>{
@@ -114,14 +148,41 @@ window.THREE = THREE
           return
         }
         const amount = (value-min)/range
-        const material = new THREE.MeshBasicMaterial()
-        const hue = THREE.MathUtils.lerp(0.7,0.3,amount)
-        const saturation = 1
 
-        const lightness = THREE.MathUtils.lerp(0.7,.3,amount)
 
-        material.color.setHSL(hue,saturation,lightness)
-        const mesh = new THREE.Mesh(geometry,material)
+
+
+
+
+        // const material = new THREE.MeshBasicMaterial()
+        // const hue = THREE.MathUtils.lerp(0.7,0.3,amount)
+        // const saturation = 1
+        //
+        // const lightness = THREE.MathUtils.lerp(0.7,.3,amount)
+        //
+        // material.color.setHSL(hue,saturation,lightness)
+        // const mesh = new THREE.Mesh(geometry,material)
+        // 这里为每一个像素点都添加了一个box
+        // scene.add(mesh)
+        const boxWidth = 1
+        const boxHeight = 1
+        const boxDepth = 1
+
+        const geometry = new THREE.BoxGeometry(
+          boxWidth,boxHeight,boxDepth
+        )
+
+
+
+
+
+
+
+
+
+
+
+
 
         lonHelper.rotation.y = THREE.MathUtils.degToRad(
           lonNdx+file.xllcorner) + lonFudge
@@ -129,14 +190,53 @@ window.THREE = THREE
           latNdx+file.yllcorner) + latFudge
 
 
-        positionHelper.updateWorldMatrix(true,false)
-        mesh.applyMatrix4(positionHelper.matrixWorld)
-        mesh.scale.set(
-          0.005,0.005,THREE.MathUtils.lerp(0.01,0.5,amount)
-        )
-        scene.add(mesh)
+
+        // 计算一个颜色
+        const hue = THREE.MathUtils.lerp(0.7,0.3,amount)
+        const saturation = 1
+        const lightness = THREE.MathUtils.lerp(0.4,1,amount)
+        color.setHSL(hue,saturation,lightness)
+        const rgb = color.toArray().map(v=>v*255)
+        const numVerts = geometry.getAttribute('position').count
+        const itemSize = 3
+        const colors = new Uint8Array(itemSize*numVerts)
+        colors.forEach((v,ndx)=>{
+          colors[ndx] = rgb[ndx%3]
+        })
+        const colorAttrib = new THREE.BufferAttribute(colors,itemSize,true)
+        geometry.setAttribute('color',colorAttrib)
+
+
+
+
+
+
+
+
+        //
+        // positionHelper.updateWorldMatrix(true,false)
+        // mesh.applyMatrix4(positionHelper.matrixWorld)
+        // mesh.scale.set(
+        //   0.005,0.005,THREE.MathUtils.lerp(0.01,0.5,amount)
+        // )
+        positionHelper.scale.set(0.005,0.005,THREE.MathUtils.lerp(0.01,0.5,amount))
+        originHelper.updateWorldMatrix(true,false)
+        geometry.applyMatrix4(originHelper.matrixWorld)
+        geometries.push(geometry)
+
       })
     })
+
+  //   合并 所有的几何
+    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(
+      geometries,false
+    )
+    const material = new THREE.MeshBasicMaterial({
+      vertexColors:true
+    })
+    const mesh = new THREE.Mesh(mergedGeometry,material)
+    scene.add(mesh)
+
   }
 
 
