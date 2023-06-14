@@ -17,18 +17,9 @@ class TweenManger {
   createTween(targetObject) {
     const self = this;
     ++this.numTweensRunning;
-    let userCompleteFn = () => {};
-    // create a new tween and install our own onComplete callback
     const tween = new TWEEN.Tween(targetObject).onComplete(function(...args) {
       self._handleComplete();
-      userCompleteFn.call(this, ...args);
     });
-    // replace the tween's onComplete function with our own
-    // so we can call the user's callback if they supply one.
-    tween.onComplete = (fn) => {
-      userCompleteFn = fn;
-      return tween;
-    };
     return tween;
   }
   update() {
@@ -345,7 +336,7 @@ function main(){
     }
 
     function showFileInfo(fileInfos,fileInfo){
-      const targets = {}
+      const targets = []
 
 
       fileInfos.forEach((info,i)=>{
@@ -355,8 +346,8 @@ function main(){
         targets[i] = visible ? 1:0
       })
       const durationInMs = 1000
-      tweenManager.createTween(mesh.morphTargetInfluences)
-      .to(targets,durationInMs).start()
+      const tween = tweenManager.createTween(mesh.morphTargetInfluences)
+      tween.to(targets,durationInMs).start()
       requestRenderIfNotRequested()
     }
 
@@ -461,7 +452,7 @@ function main(){
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
     camera.updateProjectionMatrix();
     renderRequested = false
-
+    //   只要 还在更新中，就一直重新渲染
     if (tweenManager.update()) {
       requestRenderIfNotRequested();
     }

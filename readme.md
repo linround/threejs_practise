@@ -13,7 +13,7 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 - 透明度；缺点是前后状态出现交叉
 - 缩放；确定是较小的物体会立即消失
 - 目标变形;方案较好
-
+- [morphTargetInfluences 似乎和合成多个几何体有关](./manual/lots-of-objects-morphtargets.html)
 
 
 ## THREE.MathUtils.lerp(x,y,t)
