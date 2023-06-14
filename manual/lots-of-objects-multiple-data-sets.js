@@ -121,7 +121,7 @@ function main(){
 
 
 
-  function addBoxes(file){
+  function addBoxes(file,hueRange){
     const {min,max,data} = file
     const range = max - min
 
@@ -172,7 +172,7 @@ function main(){
 
 
         // 计算一个颜色
-        const hue = THREE.MathUtils.lerp(0.7,0.3,amount)
+        const hue = THREE.MathUtils.lerp(...hueRange,amount)
         const saturation = 1
         const lightness = THREE.MathUtils.lerp(0.4,1,amount)
         color.setHSL(hue,saturation,lightness)
@@ -214,7 +214,7 @@ function main(){
     const fileInfos = [
       {
         name:'men',
-        hueRange:[0.7,0.3],
+        hueRange:[0.7,0],
         url:'resources/data/gpw/gpw_v4_basic_demographic_characteristics_rev10_a000_014mt_2010_cntm_1_deg.asc'
       },
       {
