@@ -226,7 +226,6 @@ function main(){
         positionHelper.scale.set(0.005,0.005,THREE.MathUtils.lerp(0.01,0.5,amount))
         originHelper.updateWorldMatrix(true,false)
         geometry.applyMatrix4(originHelper.matrixWorld)
-
         geometries.push(geometry)
 
       })
@@ -354,15 +353,19 @@ function main(){
 
 
     const geometries = fileInfos.map(info=>{
+      // makeBox返回的是 将多个点坐标合并为一个球体坐标
       return makeBoxes(info.file,info.hueRange,fileInfos)
     })
+    // 取得初始的球体坐标
     const baseGeometry = geometries[0]
+    // 这里除了position，color 应该还可以设置,rotation 等待 变换目标的属性
     baseGeometry.morphAttributes.position = geometries.map((geometry,ndx)=>{
       const attribute = geometry.getAttribute('position')
       const name = `target${ndx}`
       attribute.name = name
       return attribute
     })
+
     baseGeometry.morphAttributes.color = geometries.map((geometry,ndx)=>{
       const attribute = geometry.getAttribute('color')
       const name = `target${ndx}`
@@ -390,8 +393,6 @@ function main(){
 
     const uiElem = document.querySelector('#ui')
     fileInfos.forEach(info=>{
-      // const boxes = addBoxes(info.file,info.hueRange)
-      // info.root = boxes
       const div = document.createElement('div')
       info.elem = div
       div.textContent = info.name
