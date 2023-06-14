@@ -13,6 +13,9 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 ## THREE.MathUtils.lerp(x,y,t)
 - lerp 函数： (1 - t) * x + t * y;即可看成 `[(y-x)/1]*t+x`
 
+## 性能优化方案
+- 按需渲染
+- [合并多个几何体到一个几何体](./manual/lots-of-objects-merged.html)
 
 ## 写代码的常见问题
 - 页面无法看到场景，注意相机的位置能否看到对应的场景
