@@ -30,3 +30,4 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 ## `clientWidth` 和 `width` 的区别
 - `clientWidth`包含padding,不包含border、margins、滚动条
 - `width`可能会包含border，因为有border-box盒模型
+- [疑问到底有何区别？为什么在设置元素css的width为100%，然后再指定元素固定宽度，最终值会不一样？](./manual/offscreencanvas-w-orbitcontrols.js) 108行初次执行时；

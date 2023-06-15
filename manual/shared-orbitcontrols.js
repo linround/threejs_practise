@@ -32,26 +32,10 @@ class PickHelper {
 
 
 
-
-
-
-
-
-export const state = {
-  width: 300,   // canvas default
-  height: 150,  // canvas default
-};
-export const pickPosition = {
-  x:0,
-  y:0
-}
-
 export function init(data) {
   const {canvas,inputElement} = data;
   const renderer = new THREE.WebGLRenderer({canvas});
 
-  // state.width = canvas.width;
-  // state.height = canvas.height;
 
   const fov = 75;
   const aspect = 2; // the canvas default
@@ -105,8 +89,8 @@ export function init(data) {
 
   function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
-    const width = inputElement.width;
-    const height = inputElement.height;
+    const width = inputElement.clientWidth;
+    const height = inputElement.clientHeight;
     const needResize = canvas.width !== width || canvas.height !== height;
     if (needResize) {
       renderer.setSize(width, height, false);
@@ -128,7 +112,9 @@ export function init(data) {
       cube.rotation.x = rot;
       cube.rotation.y = rot;
     });
+
     pickHelper.pick(pickPosition,scene,camera,time)
+
     renderer.render(scene, camera);
 
     requestAnimationFrame(render);
@@ -161,20 +147,4 @@ export function init(data) {
 
 }
 
-function size(data) {
-  state.width = data.width;
-  state.height = data.height;
-}
 
-const handlers = {
-  init,
-  size,
-};
-
-self.onmessage = function(e) {
-  const fn = handlers[e.data.type];
-  if (typeof fn !== 'function') {
-    throw new Error('no handler for type: ' + e.data.type);
-  }
-  fn(e.data);
-};
