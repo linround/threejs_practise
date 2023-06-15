@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>offscreencanvas</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #noOffscreenCanvas {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        background: red;
+        color: white;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="noOffscreenCanvas" style="display:none;">
+    <div>no OffscreenCanvas support</div>
+</div>
+
+</body>
+</html>
+<script type="module" src="./offscreencanvas.js"></script>

@@ -25,3 +25,8 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 
 ## 写代码的常见问题
 - 页面无法看到场景，注意相机的位置能否看到对应的场景
+
+
+## `clientWidth` 和 `width` 的区别
+- `clientWidth`包含padding,不包含border、margins、滚动条
+- `width`可能会包含border，因为有border-box盒模型

@@ -18,6 +18,7 @@ class TweenManger {
     const self = this;
     ++this.numTweensRunning;
     const tween = new TWEEN.Tween(targetObject).onComplete(function(...args) {
+      // 这里是为了防止一直调用 update方法.造成render一直执行
       self._handleComplete();
     });
     return tween;
@@ -308,6 +309,24 @@ function main(){
         ...baseFile,min,max,data
       }
     }
+
+    function showFileInfo(fileInfos,fileInfo){
+      const targets = []
+
+
+      fileInfos.forEach((info,i)=>{
+        const visible = fileInfo === info
+        info.elem.className = visible ? 'selected':''
+        targets[i] = visible ? 1:0
+      })
+      const durationInMs = 1000
+
+      const tween = tweenManager.createTween(mesh.morphTargetInfluences)
+      tween.to(targets,durationInMs).start()
+      // mesh.morphTargetInfluences= [0,0,1,0]
+      requestRenderIfNotRequested()
+    }
+
     {
       //   生成一组新的数据
       const menInfo = fileInfos[0]
@@ -333,24 +352,6 @@ function main(){
         })
       })
     }
-
-    function showFileInfo(fileInfos,fileInfo){
-      const targets = []
-
-
-      fileInfos.forEach((info,i)=>{
-        const visible = fileInfo === info
-        // info.root.visible = visible
-        info.elem.className = visible ? 'selected':''
-        targets[i] = visible ? 1:0
-      })
-      const durationInMs = 1000
-      const tween = tweenManager.createTween(mesh.morphTargetInfluences)
-      tween.to(targets,durationInMs).start()
-      requestRenderIfNotRequested()
-    }
-
-
 
     const geometries = fileInfos.map(info=>{
       // makeBox返回的是 将多个点坐标合并为一个球体坐标
@@ -405,7 +406,6 @@ function main(){
     showFileInfo(fileInfos,fileInfos[0])
 
   }
-
 
 
 
