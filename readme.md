@@ -31,3 +31,8 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 - `clientWidth`包含padding,不包含border、margins、滚动条
 - `width`可能会包含border，因为有border-box盒模型
 - [疑问到底有何区别？为什么在设置元素css的width为100%，然后再指定元素固定宽度，最终值会不一样？](./manual/offscreencanvas-w-orbitcontrols.js) 108行初次执行时；
+
+
+
+# 总结
+- 再伟大的艺术大师也不可能仅仅通过按几个按钮或者随便刷几笔就做出惊人的艺术作品来，相反，他们也要经过大量的学习与训练，包括：人体结构，合成，灯光，动画原理等等等等；
