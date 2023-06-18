@@ -72,13 +72,48 @@ function main(){
   }
 
 
+
   {
     const objLoader = new OBJLoader()
     const mtlLoader = new MTLLoader()
     mtlLoader.load('./resources/model/blend/windmill/windmill_001.mtl',mtl=>{
       mtl.preload()
+
+      /***
+       *
+       * todo 处理风车单边渲染
+       * 1.设置每一个材质属性
+       * 2.设置精确的某个材质属性
+       * 3.自己定义材质
+       */
+      // mtl.materials.Material.side = THREE.DoubleSide
+
+      // for(const material of Object.values(mtl.materials)){
+      //   material.side = THREE.DoubleSide
+      // }
       objLoader.setMaterials(mtl)
       objLoader.load('./resources/model/blend/windmill/windmill_001.obj',(root)=>{
+
+        // 在这里可以修改材质信息
+        const materials = {
+          // 自己定义相关材质
+          Material:new THREE.MeshPhongMaterial({
+            color:'red',
+            side:THREE.DoubleSide
+          }),
+          windmill:new THREE.MeshPhongMaterial({
+            color:'green',
+            side:THREE.DoubleSide
+          })
+        }
+        // traverse 对该对象和所有的后代执行该回调
+        // 回调函数：以一个3d对象作为第一个参数(回调也没有第二个或第三个参数)
+        root.traverse((node,)=>{
+          const material = materials[node.material?.name]
+          if(material) {
+            node.material = material
+          }
+        })
         scene.add(root)
       })
 
