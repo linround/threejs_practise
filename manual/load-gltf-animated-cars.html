@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>load-gltf-animated-cars</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">import * as THREE from 'three'
+import GUI from 'lil-gui';
+import {OrbitControls} from 'three/addons/controls/OrbitControls';
+import {OBJLoader} from "three/addons/loaders/OBJLoader";
+import {MTLLoader} from "three/addons/loaders/MTLLoader";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+
+const gui = new GUI();
+
+
+function dumpVec3(v3,precision = 3){
+  return `${v3.x.toFixed(precision)},${v3.y.toFixed(precision)},${v3.z.toFixed(precision)},`
+}
+
+function frameArea(sizeToFitOnScreen,boxSize,boxCenter,camera){
+  const halfSizeToFitOnScreen = sizeToFitOnScreen*0.5
+  // 半个fov角度
+  const halfFovY = THREE.MathUtils.degToRad(camera.fov*.5)
+  const distance = halfSizeToFitOnScreen/Math.tan(halfFovY)
+
+  // 相机和中心点的一个单位向量
+  // 三位中的一个向量 相机位置指向中心点
+  // const direction = (new THREE.Vector3()).subVectors(camera.position,boxCenter).normalize()
+  // multiply 是叉乘（1，0，1） 最终得到的是一条眼y轴的线
+  // 所以下属方法主要是计算的沿y轴的方向向量
+  // 即xz平面距离盒子中心的向量
+  const direction = (new THREE.Vector3())
+    .subVectors(camera.position, boxCenter)
+    .multiply(new THREE.Vector3(1, 0, 1))
+    .normalize();
+//   设置相机距离
+  camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
+  camera.near = boxSize/100
+  camera.far = boxSize*100
+  camera.updateProjectionMatrix()
+  camera.lookAt(boxCenter.x,boxCenter.y,boxCenter.z)
+
+}
+
+
+function main(){
+
+  const canvas = document.querySelector('#c')
+  const renderer = new THREE.WebGLRenderer({canvas})
+  renderer.shadowMap.enabled = true;
+  function makeCamera (fov=45) {
+    const aspect = 2
+    const zNear = 0.1
+    const zFar = 100
+    // 创建一个透视相机（视锥体）
+    return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+  }
+  const camera = makeCamera()
+  camera.position.set(0,5,0)
+  const controls = new OrbitControls(camera,canvas)
+  controls.update();
+
+  // 建立一个场景节点
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color('#DEFEFF');
+  {
+    const planeSize = 40
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load('resources/images/checker.png')
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = THREE.NearestFilter
+    const repeats = planeSize/200
+    texture.repeat.set(repeats,repeats)
+
+    const planeGeo = new THREE.PlaneGeometry(planeSize,planeSize)
+    const planeMat = new THREE.MeshPhongMaterial({
+      map:texture,
+      side:THREE.DoubleSide
+    })
+    const mesh = new THREE.Mesh(planeGeo,planeMat)
+    mesh.rotation.x = Math.PI*-.5
+    scene.add(mesh)
+  }
+
+  {
+    const skyColor = 0xb1e1ff
+    const groundColor = 0xb97a20
+    const intensity = 0.6
+    // 半球光  从天空色到草地的过渡
+    const light = new THREE.HemisphereLight(
+      skyColor,groundColor,intensity
+    )
+    scene.add(light)
+  }
+
+
+  // 在场景中添加光源
+  {
+    const color = 0xffffff
+    const intensity = 1
+    // 创建平行光
+    const light = new THREE.DirectionalLight(color,intensity)
+    light.castShadow = true
+    //设置光源位置
+
+    light.position.set(-250, 800, -850);
+    light.target.position.set(-550, 40, -450);
+    light.shadow.bias = -0.004;
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
+    scene.add(light)
+    scene.add(light.target)
+
+    const cam = light.shadow.camera;
+    cam.near = 1;
+    cam.far = 2000;
+    cam.left = -1500;
+    cam.right = 1500;
+    cam.top = 1500;
+    cam.bottom = -1500;
+  }
+  let cars = []
+  {
+    const gltfLoader = new GLTFLoader()
+    const url = './resources/model/blend/cartoon_lowpoly_small_city_free_pack/scene.gltf'
+    gltfLoader.load(url,(gltf)=>{
+      const root = gltf.scene
+      scene.add(root)
+      root.traverse((obj) => {
+        if (obj.castShadow !== undefined) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+        }
+      });
+
+      const loadedCars = root.getObjectByName('Cars');
+      const fixes = [
+        { prefix: 'Car_08', y: 0,  rot: [Math.PI * .5, 0, Math.PI * .5], },
+        { prefix: 'CAR_03', y: 0, rot: [0, Math.PI, 0], },
+        { prefix: 'Car_04', y: 0, rot: [0, Math.PI, 0], },
+      ];
+
+      for (const car of loadedCars.children.slice()) {
+        const fix = fixes.find(fix => car.name.startsWith(fix.prefix));
+        const obj = new THREE.Object3D();
+        car.position.set(0, fix.y, 0);
+        car.rotation.set(...fix.rot);
+        obj.add(car);
+        scene.add(obj);
+        cars.push(obj);
+      }
+      {
+
+        //   计算尺寸
+        const box = new THREE.Box3().setFromObject(root)
+        const boxSize = box.getSize(new THREE.Vector3()).length()
+        const boxCenter = box.getCenter(new THREE.Vector3())
+        frameArea(boxSize*0.5,boxSize,boxCenter,camera)
+        controls.target.copy(boxCenter)
+        controls.update()
+      }
+    })
+  }
+
+  let curve
+  let curveObject
+  {
+    const controlPoints = [
+      [1.118281, 5.115846, -3.681386],
+      [3.948875, 5.115846, -3.641834],
+      [3.960072, 5.115846, -0.240352],
+      [3.985447, 5.115846, 4.585005],
+      [-3.793631, 5.115846, 4.585006],
+      [-3.826839, 5.115846, -14.736200],
+      [-14.542292, 5.115846, -14.765865],
+      [-14.520929, 5.115846, -3.627002],
+      [-5.452815, 5.115846, -3.634418],
+      [-5.467251, 5.115846, 4.549161],
+      [-13.266233, 5.115846, 4.567083],
+      [-13.250067, 5.115846, -13.499271],
+      [4.081842, 5.115846, -13.435463],
+      [4.125436, 5.115846, -5.334928],
+      [-14.521364, 5.115846, -5.239871],
+      [-14.510466, 5.115846, 5.486727],
+      [5.745666, 5.115846, 5.510492],
+      [5.787942, 5.115846, -14.728308],
+      [-5.423720, 5.115846, -14.761919],
+      [-5.373599, 5.115846, -3.704133],
+      [1.004861, 5.115846, -3.641834],
+    ];
+    const p0 = new THREE.Vector3()
+    const p1 = new THREE.Vector3()
+    // 绘制曲线
+    curve = new THREE.CatmullRomCurve3(
+        controlPoints.map((p,ndx)=>{
+          p0.set(...p)
+          p1.set(...controlPoints[(ndx+1)%controlPoints.length])
+          return [
+            new THREE.Vector3().copy(p0),
+            new THREE.Vector3().lerpVectors(p0,p1,0.1), // 为何 这样去取得直角
+            new THREE.Vector3().lerpVectors(p0,p1,0.9),
+          ]
+        }).flat(),
+      true
+    )
+    {
+      // 取其中250个点
+      const points = curve.getPoints(250)
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({color: 0xff0000});
+      curveObject = new THREE.Line(geometry, material);
+      curveObject.scale.set(100, 100, 100);
+      curveObject.position.y = -621;
+      // curveObject.visible = true;
+      material.depthTest = false;
+      curveObject.renderOrder = 1;
+      scene.add(curveObject);
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // 这里的time是毫秒级别
+  const carPosition = new THREE.Vector3();
+  const carTarget = new THREE.Vector3();
+  function render(time){
+    time *= 0.001
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    renderer.setSize(width, height, false);
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
+
+    if(cars) {
+
+      {
+        const pathTime = time*0.01
+        const targetOffset = 0.01
+
+        cars.forEach((car,ndx)=>{
+          const u = pathTime+ndx/cars.length
+          // 得到第一个点坐标
+          curve.getPointAt(u%1,carPosition)
+          carPosition.applyMatrix4(curveObject.matrixWorld)
+          // 第二个点坐标
+          curve.getPointAt((u+targetOffset)%1,carTarget)
+          carTarget.applyMatrix4(curveObject.matrixWorld)
+          car.position.copy(carPosition)
+          car.lookAt(carTarget)
+
+        })
+      }
+    }
+
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(render)
+  }
+  requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+}
+main()
+
+
+</script>
