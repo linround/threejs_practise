@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>load-gltf-rotate-cars-fixed</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">import * as THREE from 'three'
+import GUI from 'lil-gui';
+import {OrbitControls} from 'three/addons/controls/OrbitControls';
+import {OBJLoader} from "three/addons/loaders/OBJLoader";
+import {MTLLoader} from "three/addons/loaders/MTLLoader";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+
+const gui = new GUI();
+
+
+function makeCube(size = 2,color='green'){
+  const geometry = new THREE.BoxGeometry(size,size,size)
+  const material = new THREE.MeshPhongMaterial({
+    color
+  })
+  const mesh = new THREE.Mesh(geometry,material)
+  return mesh
+}
+
+function dumpObject(obj, lines = [], isLast = true, prefix = '') {
+  const localPrefix = isLast ? '└─' : '├─';
+  lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
+  const newPrefix = prefix + (isLast ? '  ' : '│ ');
+  const lastNdx = obj.children.length - 1;
+  obj.children.forEach((child, ndx) => {
+    const isLast = ndx === lastNdx;
+    dumpObject(child, lines, isLast, newPrefix);
+  });
+  return lines;
+}
+
+function frameArea(sizeToFitOnScreen,boxSize,boxCenter,camera){
+  const halfSizeToFitOnScreen = sizeToFitOnScreen*0.5
+  // 半个fov角度
+  const halfFovY = THREE.MathUtils.degToRad(camera.fov*.5)
+  const distance = halfSizeToFitOnScreen/Math.tan(halfFovY)
+
+  // 相机和中心点的一个单位向量
+  // 三位中的一个向量 相机位置指向中心点
+  // const direction = (new THREE.Vector3()).subVectors(camera.position,boxCenter).normalize()
+  // multiply 是叉乘（1，0，1） 最终得到的是一条眼y轴的线
+  // 所以下属方法主要是计算的沿y轴的方向向量
+  // 即xz平面距离盒子中心的向量
+  const direction = (new THREE.Vector3())
+    .subVectors(camera.position, boxCenter)
+    .multiply(new THREE.Vector3(1, 0, 1))
+    .normalize();
+//   设置相机距离
+  camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
+  camera.near = boxSize/100
+  camera.far = boxSize*100
+  camera.updateProjectionMatrix()
+  camera.lookAt(boxCenter.x,boxCenter.y,boxCenter.z)
+
+}
+
+
+function main(){
+
+  const canvas = document.querySelector('#c')
+  const renderer = new THREE.WebGLRenderer({canvas})
+  function makeCamera (fov=45) {
+    const aspect = 2
+    const zNear = 0.1
+    const zFar = 100
+    // 创建一个透视相机（视锥体）
+    return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+  }
+  const camera = makeCamera()
+  camera.position.set(100,5,0)
+  const controls = new OrbitControls(camera,canvas)
+  controls.target.set(0, 5, 0);
+  controls.update();
+
+  // 建立一个场景节点
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color('black')
+  {
+    const planeSize = 40
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load('resources/images/checker.png')
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = THREE.NearestFilter
+    const repeats = planeSize/200
+    texture.repeat.set(repeats,repeats)
+
+    const planeGeo = new THREE.PlaneGeometry(planeSize,planeSize)
+    const planeMat = new THREE.MeshPhongMaterial({
+      map:texture,
+      side:THREE.DoubleSide
+    })
+    const mesh = new THREE.Mesh(planeGeo,planeMat)
+    mesh.rotation.x = Math.PI*-.5
+    scene.add(mesh)
+  }
+
+  {
+    const skyColor = 0xb1e1ff
+    const groundColor = 0xb97a20
+    const intensity = 0.6
+    // 半球光  从天空色到草地的过渡
+    const light = new THREE.HemisphereLight(
+      skyColor,groundColor,intensity
+    )
+    scene.add(light)
+  }
+
+
+  // 在场景中添加光源
+  {
+    const color = 0xffffff
+    const intensity = 0.8
+    // 创建平行光
+    const light = new THREE.DirectionalLight(color,intensity)
+    //设置光源位置
+    light.position.set(5,10,2)
+    scene.add(light)
+    scene.add(light.target)
+  }
+  let cars = []
+  {
+    const gltfLoader = new GLTFLoader()
+    const url = './resources/model/blend/cartoon_lowpoly_small_city_free_pack/scene.gltf'
+    gltfLoader.load(url,(gltf)=>{
+      const root = gltf.scene
+      scene.add(root)
+      const loadedCars = root.getObjectByName('Cars')
+      const fixes = [
+        {
+          prefix: 'Car_08',
+          rot: [Math.PI * .5, 0, Math.PI * .5],
+          color:'black'
+        },
+        {
+          prefix: 'CAR_03',
+          rot: [0, 0, 0],
+          color:'yellow'
+        },
+        {
+          prefix: 'Car_04',
+          rot: [0, 0, 0],
+          color:'red'
+        },
+      ];
+      for(const car of loadedCars.children.slice()){
+        const fix = fixes.find(fix=>car.name.startsWith(fix.prefix))
+        const obj = makeCube(100,fix.color)
+        car.getWorldPosition(obj.position)
+        car.position.set(0,0,0)
+        // car.rotation.set(...fix.rot)
+        // 当将一个model A 作为场景model B的子model后，
+        // 子model 的位置都是相对于场景A进行的转换
+        obj.add(car)
+        scene.add(obj)
+        cars.push(obj)
+      }
+
+
+
+      //   计算尺寸
+      const box = new THREE.Box3().setFromObject(root)
+      const boxSize = box.getSize(new THREE.Vector3()).length()
+      const boxCenter = box.getCenter(new THREE.Vector3())
+      frameArea(boxSize*0.5,boxSize,boxCenter,camera)
+      controls.target.copy(boxCenter)
+      controls.update()
+    })
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // 这里的time是毫秒级别
+  function render(time){
+    time *= 0.001
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    renderer.setSize(width, height, false);
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
+
+    if(cars) {
+      for (const car of cars){
+        car.rotation.y = time
+      }
+    }
+
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(render)
+  }
+  requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+}
+main()
+
+
+</script>
