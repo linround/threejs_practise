@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>transparency-intersecting-planes-fixed</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 25
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.set(0.5, 1, 0.5);
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('white');
+
+    function addLight(x, y, z) {
+      const color = 0xFFFFFF;
+      const intensity = 1;
+      const light = new THREE.DirectionalLight(color, intensity);
+      light.position.set(x, y, z);
+      scene.add(light);
+    }
+    addLight(-1,  2,  4);
+    addLight( 1, -1, -2);
+
+
+
+    const planeWidth = 0.5
+    const planeHeight = 1
+    const geometry = new THREE.PlaneGeometry(
+      planeWidth,planeHeight
+    )
+
+    const loader = new THREE.TextureLoader();
+
+
+    function makeInstance(geometry, color, rotY, url) {
+      const base = new THREE.Object3D()
+      scene.add(base)
+      base.rotation.y = rotY;
+
+      [-1,1].forEach(x=>{
+        const texture = loader.load(url, render);
+        // 两个纹理合成一个
+        texture.offset.x = x < 0 ? 0 : 0.5;
+        // 这里设置repeat 有拉伸的效果
+        texture.repeat.x = 0.5;
+        const material = new THREE.MeshPhongMaterial({
+          color:x < 0 ? 'red':'yellow',
+          map: texture,
+          opacity: 0.5,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+
+        // 平面宽度是0.5
+        const mesh = new THREE.Mesh(geometry, material);
+        base.add(mesh);
+        // mesh的位置实际是相对于base中心的位置
+        // 通过设置为 planeWidth/2，来保证
+        // 河里设置x的位置从而确保能够正确的区分出来
+        mesh.position.x = x * (planeWidth/2);
+      })
+
+
+
+    }
+    makeInstance(geometry, 'pink',       0,             'resources/images/happyface.png');
+    makeInstance(geometry, 'lightblue',  Math.PI * 0.5, 'resources/images/hmmmface.png');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>

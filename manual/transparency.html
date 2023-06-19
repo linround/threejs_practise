@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>transparency</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 25
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.z = 4
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('white')
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    function addLight(...pos){
+      const color = 0xffffff
+      const intensity = 1
+      const light = new THREE.DirectionalLight(color,intensity)
+      light.position.set(...pos)
+      scene.add(light)
+    }
+    addLight(-1,2,4)
+    addLight(1,-1,-2)
+
+    const boxWidth = 1
+    const boxHeight = 1
+    const boxDepth = 1
+    const geometry = new THREE.BoxGeometry(
+      boxWidth,boxHeight,boxDepth
+    )
+
+    function makeInstance(geometry,color,x,y,z){
+      [THREE.BackSide,THREE.FrontSide,THREE.DoubleSide].forEach(side=>{
+        const material = new THREE.MeshPhongMaterial({
+          color,
+          side,
+          opacity:0.5, // 2. 设置不透明度
+          transparent:true // 1. 开启透明度处理
+        })
+        const cube = new THREE.Mesh(geometry,material)
+        scene.add(cube)
+
+        cube.position.set(x,y,z)
+      })
+    }
+
+    function hsl(h, s, l) {
+      return (new THREE.Color()).setHSL(h, s, l);
+    }
+
+    {
+      const d = 0.8
+      makeInstance(geometry, hsl(0 / 8, 1, .5), -d, -d, -d);
+      makeInstance(geometry, hsl(1 / 8, 1, .5),  d, -d, -d);
+      makeInstance(geometry, hsl(2 / 8, 1, .5), -d,  d, -d);
+      makeInstance(geometry, hsl(3 / 8, 1, .5),  d,  d, -d);
+      makeInstance(geometry, hsl(4 / 8, 1, .5), -d, -d,  d);
+      makeInstance(geometry, hsl(5 / 8, 1, .5),  d, -d,  d);
+      makeInstance(geometry, hsl(6 / 8, 1, .5), -d,  d,  d);
+      makeInstance(geometry, hsl(7 / 8, 1, .5),  d,  d,  d);
+    }
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
