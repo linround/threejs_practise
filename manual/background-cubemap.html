@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>background-cubemap</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha:true
+    })
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 1000
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.z = 4
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.update();
+    // 在场景中添加光源
+    {
+      // 创建平行光
+      const light = new THREE.DirectionalLight(0xffffff,1)
+      //设置光源位置
+      light.position.set(-1,2,4)
+      scene.add(light)
+    }
+
+
+
+
+
+
+    // 使用css设置背景，再后期场景无法进行处理
+    // 设置背景 使用CubeTextureLoader
+    const loader = new THREE.CubeTextureLoader()
+    const bgTexture = loader.load([
+      './resources/images/cubemaps/computer-history-museum/pos-x.jpg',
+      './resources/images/cubemaps/computer-history-museum/neg-x.jpg',
+      './resources/images/cubemaps/computer-history-museum/pos-y.jpg',
+      './resources/images/cubemaps/computer-history-museum/neg-y.jpg',
+      './resources/images/cubemaps/computer-history-museum/pos-z.jpg',
+      './resources/images/cubemaps/computer-history-museum/neg-z.jpg',
+    ])
+    scene.background = bgTexture
+
+
+
+
+    const boxWidth = 1;
+    const boxHeight = 1;
+    const boxDepth = 1;
+    const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+    function makeInstance(geometry, color, x) {
+      const material = new THREE.MeshPhongMaterial({color});
+
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      cube.position.x = x;
+
+      return cube;
+    }
+    const cubes = [
+      makeInstance(geometry, 0x44aa88,  0),
+      makeInstance(geometry, 0x8844aa, -2),
+      makeInstance(geometry, 0xaa8844,  2),
+    ];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+
+      {
+        const canvasAspect = canvas.clientWidth/canvas.clientHeight
+        const imageAspect = bgTexture.image? bgTexture.image.width/bgTexture.image.height : 1
+        const aspect = imageAspect/canvasAspect
+
+        bgTexture.offset.x = aspect > 1 ? (1 - 1/aspect)/2:0
+        bgTexture.repeat.x = aspect >1 ? 1/aspect : 1
+        bgTexture.offset.y = aspect>1 ? 0: (1- aspect)
+        bgTexture.repeat.y = aspect>1 ? 1: aspect
+
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      cubes.forEach((cube, ndx) => {
+        const speed = 1 + ndx * .1;
+        const rot = time * speed;
+        cube.rotation.x = rot;
+        cube.rotation.y = rot;
+      });
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
