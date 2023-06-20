@@ -2,20 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>multiple-scenes-controls</title>
+    <title>multiple-scenes-copy-canvas</title>
     <style>
       html, body {
         height: 100%;
         margin: 0;
       }
-      #c {
-        position: absolute;
-        left: 0;
-        top: 0;
+      canvas {
         width: 100%;
         height: 100%;
         display: block;
-        z-index: -1;
       }
       .diagram{
         display: inline-block;
@@ -34,12 +30,11 @@
       p {
         margin: 1em auto;
         max-width: 500px;
-        font-size: 16px;
+        font-size: 32px;
       }
     </style>
 </head>
 <body>
-<canvas id="c"></canvas>
 <p>
     <span id="box" data-diagram="box" class="diagram left"></span>
     I love boxes. Presents come in boxes.
@@ -62,16 +57,20 @@
 
   function main(){
 
-    const canvas = document.querySelector('#c')
+    const canvas = document.createElement('canvas')
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha:true
-
     })
+    renderer.setScissorTest(true)
+
+
     const sceneElements = []
     function addScene(elem,fn){
+      const ctx = document.createElement('canvas').getContext('2d')
+      elem.appendChild(ctx.canvas)
       sceneElements.push({
-        elem,fn
+        elem,ctx,fn
       })
     }
 
@@ -158,9 +157,6 @@
 
 
 
-
-    const clearColor = new THREE.Color('#000')
-
     document.querySelectorAll('[data-diagram]').forEach((elem) => {
       const sceneName = elem.dataset.diagram;
       const sceneInitFunction = sceneInitFunctionsByName[sceneName];
@@ -171,43 +167,47 @@
     function render(time){
       time *= 0.001
 
-      const canvas = renderer.domElement;
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      renderer.setSize(width, height, false);
-
-      const transform = `translateY(${window.scrollY}px)`
-      renderer.domElement.style.transform = transform
-      renderer.setScissorTest(false)
-      renderer.setClearColor(clearColor,0)
-      renderer.clear(true,true)
-      // 启用后.定义在剪刀区域内的像素才会收到渲染器操作得影响
-      // 这里算是一个优化项
-      renderer.setScissorTest(true)
 
 
-      for (const {elem,fn} of sceneElements){
+
+      for (const {elem,fn,ctx} of sceneElements){
         const rect = elem.getBoundingClientRect()
         const {
           left,right,top,bottom,width,height
         } = rect
+        const rendererCanvas = renderer.domElement
+
         // 检查是否绘制
         // 1. bottom已经在顶部超出
         // 2.元素已经位移到canvas下面
         // 3. 元素right已经位移到屏幕最左边
         // 4. 元素left已经位移出canvas最右边
         const isOffscreen =
-          bottom<0||
-          top>renderer.domElement.clientHeight||
-          right<0||
-          left>renderer.domElement.clientWidth
-        if(!isOffscreen){
-          const positiveYUpBottom = renderer.domElement.clientHeight - bottom;
+          bottom <0||
+          top > window.innerHeight||
+          right <0 ||
+          left >window.innerWidth
+        if(!isOffscreen) {
+          if(rendererCanvas.width<width || rendererCanvas.height<height) {
+            renderer.setSize(width,height,false)
+          }
+          ctx.canvas.width = width
+          ctx.canvas.height = height
 
-          renderer.setScissor(left,positiveYUpBottom,width,height)
-          renderer.setViewport(left,positiveYUpBottom,width,height)
+          renderer.setScissor(0,0,width,height)
+          renderer.setViewport(0,0,width,height)
           fn(time,rect)
+          ctx.globalCompositeOperation = 'copy';
+          // 不需要将renderCanvas 渲染出来，只需要将对于得区域复制在2d上下文中即可
+          ctx.drawImage(
+            rendererCanvas,
+            0, rendererCanvas.height - height, width, height,// src
+            0, 0, width, height); // dst
         }
+
+
+
+
 
       }
 
