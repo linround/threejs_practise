@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>picking-raycaster-transparency</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+
+
+
+
+  class PickHelper {
+    constructor() {
+      this.raycaster = new THREE.Raycaster()
+      this.pickedObject = null
+      this.pickedObjectSavedColor = 0
+    }
+    pick(normalizedPosition,scene,camera,time){
+      if(this.pickedObject) {
+        // 重新设置发光属性
+        this.pickedObject.material.emissive.setHex(this.pickedObjectSavedColor)
+        this.pickedObject = undefined
+      }
+      // 从相机截锥体投射光
+      this.raycaster.setFromCamera(normalizedPosition,camera)
+      // 找到场景中所与投射的光所交叉得部分
+      const intersectedObjects = this.raycaster.intersectObjects(scene.children)
+      if(intersectedObjects.length){
+        this.pickedObject = intersectedObjects[0].object
+        this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex()
+        this.pickedObject.material.emissive.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
+      }
+
+    }
+  }
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=60) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 200
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.z = 30
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('0xfffff')
+
+    // 将相机杆放在场景中，
+    // 然后将相机放在相机杆上即可
+    const cameraPole = new THREE.Object3D()
+    scene.add(cameraPole)
+    cameraPole.add(camera)
+
+
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 5, 0);
+    controls.update();
+    // 在场景中添加光源
+    {
+      // 创建平行光
+      const light = new THREE.DirectionalLight(0xffffff,1)
+      //设置光源位置
+      light.position.set(-1,2,4)
+      scene.add(light)
+    }
+    const boxSize = 1
+    const geometry = new THREE.BoxGeometry(
+      boxSize,boxSize,boxSize
+    )
+    function rand(min,max){
+      if(max ===undefined) {
+        max = min
+        min = 0
+      }
+      return min + (max -min)*Math.random()
+    }
+    function randomColor() {
+      return `hsl(${rand(360) | 0}, ${rand(50, 100) | 0}%, 50%)`;
+    }
+
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load('./resources/images/frame.png')
+    const numObjects = 100
+    for(let i=0;i<numObjects;i++){
+      const material = new THREE.MeshPhongMaterial({
+        color:randomColor(),
+        map:texture,
+        transparent:false,
+        side:THREE.DoubleSide,
+        alphaTest:0.3
+      })
+      const cube = new THREE.Mesh(geometry,material)
+      scene.add(cube)
+      cube.position.set(rand(-20,20),rand(-20,20),rand(-20,20))
+      cube.rotation.set(rand(Math.PI),rand(Math.PI),0)
+      cube.scale.set(rand(1,6),rand(1,3),rand(1,3))
+    }
+
+
+    function getCanvasRelativePosition(event){
+      const rect = canvas.getBoundingClientRect()
+      return {
+        x:event.clientX - rect.left,
+        y:event.clientY - rect.top
+      }
+    }
+    function setPickPosition(event){
+      const pos = getCanvasRelativePosition(event)
+      // 转换为-1~1
+      pickPosition.x = (pos.x/canvas.width)*2 -1
+      pickPosition.y = (pos.y/canvas.height)*-2+1 // 注意翻转
+    }
+    function clearPickPosition(){
+      pickPosition.x = -100000
+      pickPosition.y = -100000
+    }
+    const pickPosition = {
+      x:0,y:0
+    }
+    const pickHelper = new PickHelper()
+    clearPickPosition()
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+      cameraPole.rotation.y = time * .1;
+      pickHelper.pick(pickPosition,scene,camera,time)
+
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+    window.addEventListener('mousemove',setPickPosition)
+    window.addEventListener('mouseout',clearPickPosition)
+    window.addEventListener('mouseleave',clearPickPosition)
+
+
+
+  }
+  main()
+
+</script>
