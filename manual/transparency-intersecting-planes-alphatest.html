@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>transparency-intersecting-planes-fixed</title>
+    <title>transparency-intersecting-planes-alphatest</title>
     <style>
       html, body {
         height: 100%;
@@ -25,6 +25,31 @@
   import {OrbitControls} from 'three/addons/controls/OrbitControls';
 
   const gui = new GUI();
+  class AllMaterialPropertyGUIHelper {
+    constructor(prop, scene) {
+      this.prop = prop;
+      this.scene = scene;
+    }
+    get value() {
+      const {scene, prop} = this;
+      let v;
+      scene.traverse((obj) => {
+        if (obj.material && obj.material[prop] !== undefined) {
+          v = obj.material[prop];
+        }
+      });
+      return v;
+    }
+    set value(v) {
+      const {scene, prop} = this;
+      scene.traverse((obj) => {
+        if (obj.material && obj.material[prop] !== undefined) {
+          obj.material[prop] = v;
+          obj.material.needsUpdate = true;
+        }
+      });
+    }
+  }
 
   function main(){
 
@@ -70,39 +95,22 @@
 
 
     function makeInstance(geometry, color, rotY, url) {
-      const base = new THREE.Object3D()
-      scene.add(base)
-      base.rotation.y = rotY;
+      const texture = loader.load(url, render);
+      const material = new THREE.MeshPhongMaterial({
+        color,
+        map: texture,
+        alphaTest: 0.5,
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
 
-      // 手动的划分每一个平面变成两个平面
-      [-1,1].forEach(x=>{
-        const texture = loader.load(url, render);
-        // 两个纹理合成一个
-        texture.offset.x = x < 0 ? 0 : 0.5;
-        // 这里设置repeat 有拉伸的效果
-        texture.repeat.x = 0.5;
-        const material = new THREE.MeshPhongMaterial({
-          color:x < 0 ? 'red':'yellow',
-          map: texture,
-          opacity: 0.5,
-          transparent: true,
-          side: THREE.DoubleSide,
-        });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
 
-        // 平面宽度是0.5
-        const mesh = new THREE.Mesh(geometry, material);
-        base.add(mesh);
-        // mesh的位置实际是相对于base中心的位置
-        // 通过设置为 planeWidth/2，来保证
-        // 河里设置x的位置从而确保能够正确的区分出来
-        mesh.position.x = x * (planeWidth/2);
-      })
-
-
-
+      mesh.rotation.y = rotY;
     }
-    makeInstance(geometry, 'pink',       0,             'resources/images/happyface.png');
-    makeInstance(geometry, 'lightblue',  Math.PI * 0.5, 'resources/images/hmmmface.png');
+    makeInstance(geometry, 'white',       0,             'resources/images/tree-01.png');
+    makeInstance(geometry, 'white',  Math.PI * 0.5, 'resources/images/tree-02.png');
 
 
 
@@ -128,10 +136,24 @@
 
 
 
+    const gui = new GUI();
+    gui.add(new AllMaterialPropertyGUIHelper('alphaTest', scene), 'value', 0, 1)
+      .name('alphaTest')
+      .onChange(requestRenderIfNotRequested);
+    gui.add(new AllMaterialPropertyGUIHelper('transparent', scene), 'value')
+      .name('transparent')
+      .onChange(requestRenderIfNotRequested);
 
-
+    let renderRequested = false;
+    function requestRenderIfNotRequested() {
+      if (!renderRequested) {
+        renderRequested = true;
+        requestAnimationFrame(render);
+      }
+    }
     // 这里的time是毫秒级别
     function render(time){
+      renderRequested = undefined;
       time *= 0.001
       const canvas = renderer.domElement;
       const width = canvas.clientWidth;
