@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>postprocessing-3dlut-prep</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+  import {EffectComposer} from "three/addons/postprocessing/EffectComposer";
+  import {BloomPass} from "three/addons/postprocessing/BloomPass";
+  import {FilmPass} from "three/addons/postprocessing/FilmPass";
+  import {RenderPass} from "three/addons/postprocessing/RenderPass";
+  import {ShaderPass} from "three/addons/postprocessing/ShaderPass";
+  import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+
+  const gui = new GUI();
+
+
+
+  function frameArea(sizeToFitOnScreen, boxSize, boxCenter, camera) {
+    const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.5;
+    const halfFovY = THREE.MathUtils.degToRad(camera.fov * .5);
+    const distance = halfSizeToFitOnScreen / Math.tan(halfFovY);
+    const direction = (new THREE.Vector3())
+      .subVectors(camera.position, boxCenter)
+      .multiply(new THREE.Vector3(1, 0, 1))
+      .normalize();
+
+    camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
+
+    camera.near = boxSize / 100;
+    camera.far = boxSize * 100;
+
+    camera.updateProjectionMatrix();
+
+    camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
+  }
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.autoClearColor = false;
+
+    function makeCamera (fov=45) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 100
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.set(0, 10, 20);
+//   相机朝向
+    camera.lookAt(0,0,0)
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 5, 0);
+    controls.update();
+
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+
+    const sceneBG = new THREE.Scene()
+    const cameraBG = new THREE.OrthographicCamera(
+      -1,1,1,-1,-1,1
+    )
+    let bgMesh
+    let bgTexture
+
+
+    {
+      const loader = new THREE.TextureLoader()
+      bgTexture = loader.load('./resources/images/beach.jpg')
+      bgTexture.encoding = THREE.sRGBEncoding
+      const planeGeo = new THREE.PlaneGeometry(2,2)
+      const planeMat = new THREE.MeshBasicMaterial({
+        map:bgTexture,
+        depthTest: false
+      })
+      bgMesh = new THREE.Mesh(planeGeo,planeMat)
+      sceneBG.add(bgMesh)
+    }
+
+    {
+      const gltfLoader = new GLTFLoader()
+      gltfLoader.load(
+        './resources/model/3dbustchallange_submission/scene.gltf',
+        glft=> {
+          const root = glft.scene
+          scene.add(root)
+          root.traverse(({material})=>{
+            if(material) {
+              material.depthWrite = true
+            }
+          })
+          const box = new THREE.Box3().setFromObject(root)
+          const boxSize = box.getSize(new THREE.Vector3()).length()
+          const boxCenter = box.getCenter(new THREE.Vector3())
+          frameArea(boxSize*0.4,boxSize,boxCenter,camera)
+
+          controls.maxDistance = boxSize * 10;
+          controls.target.copy(boxCenter);
+          controls.update();
+
+        }
+      )
+    }
+
+
+    // 制作一个4x2得2d纹理查找表代替3d模式
+    const makeIdentityLutTexture = (function (){
+      const identityLUT = new Uint8Array([
+        0,   0,   0, 255,  // black
+        255,   0,   0, 255,  // red
+        0,   0, 255, 255,  // blue
+        255,   0, 255, 255,  // magenta
+        0, 255,   0, 255,  // green
+        255, 255,   0, 255,  // yellow
+        0, 255, 255, 255,  // cyan
+        255, 255, 255, 255,  // white
+      ])
+
+
+      return function (filter){
+        const texture = new THREE.DataTexture(identityLUT,4,2,THREE.RGBAFormat)
+        texture.minFilter = filter
+        texture.magFilter = filter
+        texture.needsUpdate = true
+        texture.flipY = false
+        return texture
+      }
+    })()
+    const lutTextures = [
+      {
+        name:'identity',
+        size:2,
+        texture: makeIdentityLutTexture(THREE.LinearFilter)
+      },
+      {
+        name:'identity not filtered',
+        size:2,
+        texture: makeIdentityLutTexture(THREE.NearestFilter)
+      },
+    ]
+
+
+
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(now){
+      now *= 0.001;
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      const imageAspect = bgTexture.image ? bgTexture.image.width / bgTexture.image.height : 1;
+      const aspect = imageAspect / camera.aspect;
+      bgMesh.scale.x = aspect > 1 ? aspect : 1;
+      bgMesh.scale.y = aspect > 1 ? 1 : 1 / aspect;
+
+      renderer.render(sceneBG,cameraBG)
+      renderer.render(scene,camera)
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
