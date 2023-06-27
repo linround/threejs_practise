@@ -170,7 +170,7 @@
     const normalMatrix = new THREE.Matrix3()
     const settings = {
       minArea: 20,
-      maxVisibleDot: -0.5,
+      maxVisibleDot: -0.2,
     };
     const gui = new GUI({width: 300});
     gui.add(settings, 'minArea', 0, 50).onChange(requestRenderIfNotRequested);
@@ -220,6 +220,10 @@
 
         elem.style.display = ''
 
+        // 这里得到位置信息
+        tempV.copy(position);
+        // 将位置信息转换到相机矩阵中
+        tempV.project(camera);
 
         const x = (tempV.x*.5+.5)*canvas.clientWidth
         const y = (tempV.y*-.5+.5)*canvas.clientHeight
