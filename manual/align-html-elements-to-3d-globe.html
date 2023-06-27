@@ -170,7 +170,7 @@
     const normalMatrix = new THREE.Matrix3()
     const settings = {
       minArea: 20,
-      maxVisibleDot: -0.2,
+      maxVisibleDot: -0.5,
     };
     const gui = new GUI({width: 300});
     gui.add(settings, 'minArea', 0, 50).onChange(requestRenderIfNotRequested);
@@ -212,7 +212,7 @@
 
         // -1是正对着我们 maxVisibleDot = -.2
         // 1 是正是反面
-        // 0是正好边缘正切
+        // 0 是正好边缘正切
         if (dot > settings.maxVisibleDot) {
           elem.style.display = 'none';
           continue;
