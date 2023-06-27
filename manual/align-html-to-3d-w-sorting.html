@@ -1,56 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>align-html-to-3d</title>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    #c {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    #container{
-      position: relative;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-    #labels {
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: white;
-    }
-    #labels>div{
-      position: absolute;
-      left: 0;
-      top: 0;
-      cursor: pointer;
-      font-size: large;
-      user-select: none;
-      text-shadow:
-              -1px -1px 0 #000,
-              0   -1px 0 #000,
-              1px -1px 0 #000,
-              1px  0   0 #000,
-              1px  1px 0 #000,
-              0    1px 0 #000,
-              -1px  1px 0 #000,
-              -1px  0   0 #000;
-    }
-    #labels>div:hover {
-      color: red;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>align-html-to-3d-w-sorting</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #container{
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #labels {
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: white;
+      }
+      #labels>div{
+        white-space: nowrap;
+        position: absolute;
+        left: 0;
+        top: 0;
+        cursor: pointer;
+        font-size: large;
+        user-select: none;
+        text-shadow:
+          -1px -1px 0 #000,
+          0   -1px 0 #000,
+          1px -1px 0 #000,
+          1px  0   0 #000,
+          1px  1px 0 #000,
+          0    1px 0 #000,
+          -1px  1px 0 #000,
+          -1px  0   0 #000;
+      }
+      #labels>div:hover {
+        color: red;
+      }
+    </style>
 </head>
 <body>
 <div id="container">
-  <canvas id="c"></canvas>
-  <div id="labels"></div>
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
 </div>
 </body>
 </html>
@@ -98,13 +99,13 @@
     const boxDepth = 1
 
     const geometry = new THREE.BoxGeometry(
-            boxWidth,boxHeight,boxDepth
+      boxWidth,boxHeight,boxDepth
     )
     const labelContainerElem = document.querySelector('#labels')
     function makeInstance(geometry,color,x,name){
       const material = new THREE.MeshPhongMaterial({color})
       const cube = new THREE.Mesh(
-              geometry,material
+        geometry,material
       )
       scene.add(cube)
       cube.position.x = x
@@ -117,13 +118,9 @@
     }
 
     const cubes = [
-      makeInstance(
-              geometry,0x44aa88,0,'aqua'
-      ),makeInstance(
-              geometry,0x8844aa,-2,'purple'
-      ),makeInstance(
-              geometry,0xaa8844,2,'gold'
-      ),
+      makeInstance(geometry, 0x44aa88,  0, 'Aqua Colored Box'),
+      makeInstance(geometry, 0x8844aa, -2, 'Purple Colored Box'),
+      makeInstance(geometry, 0xaa8844,  2, 'Gold Colored Box'),
     ]
 
 
@@ -173,6 +170,7 @@
         // 这里需要对y进行翻转
         const y = (tempV.y*-.5+.5)*canvas.clientHeight
         elem.style.transform = `translate(-50%,-50%) translate(${x}px,${y}px)`;
+        elem.style.zIndex = (-tempV.z * .5 + .5) * 100000 | 0;
       })
 
 
