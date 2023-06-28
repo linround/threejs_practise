@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>indexed-textures-random-colors</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      #container {
+        position: relative;  /* makes this the origin of its children */
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #labels {
+        position: absolute;  /* let us position ourself inside the container */
+        z-index: 0;          /* make a new stacking context so children don't sort with rest of page */
+        left: 0;             /* make our position the top left of the container */
+        top: 0;
+        color: white;
+      }
+      #labels>div {
+        position: absolute;  /* let us position them inside the container */
+        left: 0;             /* make their default position the top left of the container */
+        top: 0;
+        cursor: pointer;     /* change the cursor to a hand when over us */
+        font-size: small;
+        user-select: none;   /* don't let the text get selected */
+        pointer-events: none;  /* make us invisible to the pointer */
+        text-shadow:         /* create a black outline */
+          -1px -1px 0 #000,
+          0   -1px 0 #000,
+          1px -1px 0 #000,
+          1px  0   0 #000,
+          1px  1px 0 #000,
+          0    1px 0 #000,
+          -1px  1px 0 #000,
+          -1px  0   0 #000;
+      }
+      #labels>div:hover {
+        color: red;
+      }
+    </style>
+</head>
+<body>
+<div id="container">
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
+</div>
+</body>
+</html>
+<script type="module">
+  import * as THREE from '../build/three.module'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=60) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 10
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.z = 2.5
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.enableDamping = true
+    controls.enablePan = false
+    controls.minDistance = 1.2
+    controls.maxDistance = 4
+    controls.update();
+
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('#246')
+
+    //
+    const pickingScene = new THREE.Scene()
+    pickingScene.background = new THREE.Color(0)
+
+
+
+
+    const maxNumCountries = 512
+    const paletteTextureWidth = maxNumCountries
+    const paletteTextureHeight = 1
+    const palette = new Uint8Array(4*paletteTextureWidth)
+    const paletteTexture=new THREE.DataTexture(
+      palette,paletteTextureWidth,paletteTextureHeight
+    )
+    paletteTexture.magFilter = THREE.NearestFilter
+    paletteTexture.minFilter = THREE.NearestFilter
+    paletteTexture.needsUpdate = true
+    // 随机生成调色版
+    for(let i=1;i<palette.length;i++){
+      palette[i] = Math.random()*256
+    }
+
+    // 从零位开始，重新设置前四个值
+    palette.set([100,200,255,255],0)
+
+
+
+
+
+
+
+
+
+    {
+      const loader = new THREE.TextureLoader();
+      const geometry = new THREE.SphereGeometry(1, 64, 32);
+
+      const indexTexture = loader.load('resources/data/world/country-index-texture.png', render);
+      indexTexture.minFilter = THREE.NearestFilter;
+      indexTexture.magFilter = THREE.NearestFilter;
+
+      const pickingMaterial = new THREE.MeshBasicMaterial({map: indexTexture});
+      pickingScene.add(new THREE.Mesh(geometry, pickingMaterial));
+
+      const fragmentShaderReplacements = [
+        {
+          from: '#include <common>',
+          to: `
+          #include <common>
+          uniform sampler2D indexTexture;
+          uniform sampler2D paletteTexture;
+          uniform float paletteTextureWidth;
+        `,
+        },
+        {
+          from: '#include <color_fragment>',
+          to: `
+          #include <color_fragment>
+          {
+            vec4 indexColor = texture2D(indexTexture, vUv);
+            float index = indexColor.r * 255.0 + indexColor.g * 255.0;
+            vec2 paletteUV = vec2((index + 0.5) / paletteTextureWidth, 0.5);
+            vec4 paletteColor = texture2D(paletteTexture, paletteUV);
+            // diffuseColor.rgb += paletteColor.rgb;   // white outlines
+            diffuseColor.rgb = paletteColor.rgb - diffuseColor.rgb;  // black outlines
+          }
+        `,
+        },
+      ];
+
+      const texture = loader.load('resources/data/world/country-outlines-4k.png', render);
+      const material = new THREE.MeshBasicMaterial({map: texture});
+      material.onBeforeCompile = function(shader) {
+        fragmentShaderReplacements.forEach((rep) => {
+          shader.fragmentShader = shader.fragmentShader.replace(rep.from, rep.to);
+        });
+        shader.uniforms.paletteTexture = {value: paletteTexture};
+        shader.uniforms.indexTexture = {value: indexTexture};
+        shader.uniforms.paletteTextureWidth = {value: paletteTextureWidth};
+      };
+      scene.add(new THREE.Mesh(geometry, material));
+    }
+
+
+
+    async function loadJSON(url){
+      const req = await fetch(url)
+      return req.json()
+    }
+
+    let numCountriesSelected = 0
+    let countryInfos
+    async function loadCountryData(){
+      countryInfos = await loadJSON('resources/data/world/country-info.json')
+      const lonFudge = Math.PI*1.5
+      const latFudge = Math.PI
+      const lonHelper = new THREE.Object3D()
+      const latHelper = new THREE.Object3D()
+      lonHelper.add(latHelper)
+
+
+
+
+
+      const positionHelper = new THREE.Object3D();
+      positionHelper.position.z = 1;
+      latHelper.add(positionHelper);
+
+      const labelParentElem = document.querySelector('#labels');
+
+
+      for(const countryInfo of countryInfos) {
+        const {lat,lon,min,max,name} = countryInfo
+
+
+
+
+        lonHelper.rotation.y = THREE.MathUtils.degToRad(lon) + lonFudge
+        latHelper.rotation.x = THREE.MathUtils.degToRad(lat) + latFudge
+
+        positionHelper.updateWorldMatrix(true,false)
+        const position = new THREE.Vector3()
+        positionHelper.getWorldPosition(position)
+        countryInfo.position = position
+
+
+
+        const width = max[0] - min[0];
+        const height = max[1] - min[1];
+        const area = width * height;
+        countryInfo.area = area;
+
+        const elem = document.createElement('div')
+        elem.textContent = name
+        labelParentElem.appendChild(elem)
+        countryInfo.elem = elem
+      }
+      requestRenderIfNotRequested();
+    }
+    loadCountryData()
+
+    const tempV = new THREE.Vector3()
+
+    const cameraToPoint = new THREE.Vector3()
+    const cameraPosition = new THREE.Vector3()
+    const normalMatrix = new THREE.Matrix3()
+    const settings = {
+      minArea: 20,
+      maxVisibleDot: -0.2,
+    };
+    const gui = new GUI({width: 300});
+    gui.add(settings, 'minArea', 0, 50).onChange(requestRenderIfNotRequested);
+    gui.add(settings, 'maxVisibleDot', -1, 1, 0.01).onChange(requestRenderIfNotRequested);
+
+
+
+    function updateLabels(){
+      if(!countryInfos){
+        return
+      }
+      const large = settings.minArea*settings.minArea
+
+
+      // 获取表示相机方向的矩阵
+      // 获取正规矩阵 然后进行求逆矩阵 然后进行转置
+      normalMatrix.getNormalMatrix(camera.matrixWorldInverse)
+      camera.getWorldPosition(cameraPosition)
+
+      for(const countryInfo of countryInfos){
+        const {position,elem,area,selected} = countryInfo
+
+        const largeEnough = area>=large
+        const show = selected ||(largeEnough && numCountriesSelected===0)
+        if(!show){
+          elem.style.display = 'none'
+          continue
+        }
+        // 根据相机的方向确定位置方向
+        // 获取当前位置
+        tempV.copy(position)
+        tempV.applyMatrix3(normalMatrix)
+
+        // 计算从相机到该位置的方向
+        cameraToPoint.copy(position)
+        cameraToPoint.applyMatrix4(camera.matrixWorldInverse).normalize()
+
+        // 进行点乘
+        const dot = tempV.dot(cameraToPoint)
+
+        // -1是正对着我们 maxVisibleDot = -.2
+        // 1 是正是反面
+        // 0 是正好边缘正切
+        if (dot > settings.maxVisibleDot) {
+          elem.style.display = 'none';
+          continue;
+        }
+
+        elem.style.display = ''
+
+        // 这里得到位置信息
+        tempV.copy(position);
+        // 将位置信息转换到相机矩阵中
+        tempV.project(camera);
+
+        const x = (tempV.x*.5+.5)*canvas.clientWidth
+        const y = (tempV.y*-.5+.5)*canvas.clientHeight
+        elem.style.transform = `
+         translate(-50%,-50%) translate(${x}px,${y}px)
+        `
+        elem.style.zIndex = (-tempV.z*.5+.5)*10000|0
+      }
+    }
+
+
+
+    class GPUPickerHelper {
+      constructor() {
+        this.pickingTexture = new THREE.WebGLRenderTarget(1,1)
+        this.pixelBuffer = new Uint8Array(4)
+      }
+      pick(cssPosition,scene,camera){
+        const {pickingTexture,pixelBuffer}=this
+
+        // 这里计算一个css像素 具有多少个实际设备像素
+        const pixelRatio = renderer.getPixelRatio()
+        camera.setViewOffset(
+          renderer.getContext().drawingBufferWidth,// 整个渲染区域的宽度
+          renderer.getContext().drawingBufferHeight, // 整个渲染区域的高度
+          cssPosition.x * pixelRatio|0, // 计算css像素坐标对应的设备像素坐标
+          cssPosition.y*pixelRatio|0,
+          1,1
+        )
+
+        // 渲染当前一像素区域
+        renderer.setRenderTarget(pickingTexture)
+        // 此时对应的是场景中相机的一像素
+        renderer.render(scene,camera)
+        renderer.setRenderTarget(null)
+        camera.clearViewOffset()
+        renderer.readRenderTargetPixels(
+          pickingTexture,
+          0,0,1,1,pixelBuffer
+        )
+        //   将buffer的所有位，拼接成一个二进制位
+        const id = (
+          (pixelBuffer[0]<<0) |
+          (pixelBuffer[1]<<8) |
+          (pixelBuffer[2]<<16)
+        )
+        return id
+      }
+    }
+
+    const pickHelper = new GPUPickerHelper()
+
+    function getCanvasRelativePosition(event){
+      const rect = canvas.getBoundingClientRect()
+      return {
+        x:event.clientX-rect.left,
+        y:event.clientY - rect.top
+      }
+    }
+    function pickCountry(event){
+      const position = getCanvasRelativePosition(event)
+      const id = pickHelper.pick(position,pickingScene,camera)
+      if(id>0){
+        const countryInfo = countryInfos[id-1]
+        const selected = !countryInfo.selected
+        if(selected&&!event.shiftKey &&!event.ctrlKey&&!event.metaKey) {
+          unselectAllCountries()
+        }
+
+        numCountriesSelected+=selected?1:-1
+        countryInfo.selected = selected
+      }else {
+        unselectAllCountries()
+      }
+      requestRenderIfNotRequested()
+    }
+
+    function unselectAllCountries() {
+      countryInfos.forEach((countryInfo) => {
+        countryInfo.selected = false;
+      });
+    }
+
+    canvas.addEventListener('pointerup', pickCountry);
+
+
+
+
+
+    let renderRequested = false
+    // 这里的time是毫秒级别
+    function render(time=1){
+      time *= 0.001
+      renderRequested = undefined
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+
+      updateLabels();
+      controls.update()
+
+      renderer.render(scene, camera);
+    }
+    render()
+
+    function requestRenderIfNotRequested(){
+      if(!renderRequested){
+        renderRequested = true
+        requestAnimationFrame(render)
+      }
+    }
+
+    controls.addEventListener('change', requestRenderIfNotRequested);
+
+
+
+    window.addEventListener('resize', requestRenderIfNotRequested);
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
