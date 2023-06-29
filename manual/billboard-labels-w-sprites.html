@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>billboard-labels-w-sprites</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 50
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.set(0,2,5)
+
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 2, 0);
+    controls.update();
+
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('white')
+
+
+    function addLight(position){
+      const color = 0xffffff
+      const intensity = 1
+      const light = new THREE.DirectionalLight(
+              color,intensity
+      )
+      light.position.set(...position)
+      scene.add(light)
+      scene.add(light.target)
+    }
+    addLight([-3,1,1])
+    addLight([2,1,.5])
+
+    const bodyRadiusTop = .4
+    const bodyRadiusBottom = .2
+    const bodyHeight = 2
+    const bodyRadialSegments = 6
+    const bodyGeometry = new THREE.CylinderGeometry(
+            bodyRadiusTop,bodyRadiusBottom,
+            bodyHeight,bodyRadialSegments
+    )
+    const headRadius = bodyRadiusTop*0.8
+    const headLonSegments = 12
+    const headLatSegments = 5
+    const headGeometry = new THREE.SphereGeometry(
+            headRadius,headLonSegments,headLatSegments
+    )
+    const labelGeometry = new THREE.PlaneGeometry(1,1)
+
+    const ctx = document.createElement('canvas').getContext('2d')
+    function makeLabelCanvas(baseWidth,size,name){
+      const borderSize = 2
+      const font =`${size}px bold sana-serif`
+      ctx.font = font
+
+      const textWidth = ctx.measureText(name).width
+      // 测量文本的长宽
+      const doubleBorderSize = borderSize*2
+      const width = baseWidth+doubleBorderSize
+      const height = size + doubleBorderSize
+      ctx.canvas.width = width
+      ctx.canvas.height = height
+      // 需要重新设置字体样式
+      ctx.font = font
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'blue'
+      ctx.fillRect(0,0,width,height)
+
+      const scaleFactor = Math.min(
+              1,baseWidth/textWidth
+      )
+      ctx.translate(width/2,height/2)
+      ctx.scale(scaleFactor,1)
+
+
+
+      ctx.fillStyle = 'white'
+      ctx.fillText(name,borderSize,borderSize)
+      return ctx.canvas
+    }
+    const forceTextureInitialization = function (){
+      const material = new THREE.MeshBasicMaterial()
+      const geometry = new THREE.PlaneGeometry()
+      const scene = new THREE.Scene()
+      scene.add(new THREE.Mesh(geometry,material))
+      return function forceTextureInitialization(texture){
+        material.map = texture
+        renderer.render(scene,camera)
+      }
+    }()
+
+
+    function makePerson(x,labelWidth,size,name,color){
+      const canvas = makeLabelCanvas(labelWidth,size,name)
+      const texture = new THREE.CanvasTexture(canvas)
+
+      texture.minFilter = THREE.LinearFilter;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      forceTextureInitialization(texture);
+      const labelMaterial = new THREE.SpriteMaterial({
+        map:texture,
+        transparent:true,
+      })
+      const bodyMaterial = new THREE.MeshPhongMaterial({
+        color,flatShading:true
+      })
+
+      const root = new THREE.Object3D()
+      root.position.x = x
+      const body = new THREE.Mesh(
+              bodyGeometry,bodyMaterial
+      )
+      root.add(body)
+      body.position.y = bodyHeight/2
+      const head = new THREE.Mesh(
+              headGeometry,bodyMaterial
+      )
+      root.add(head)
+      head.position.y = bodyHeight+headRadius*1.1
+
+
+
+      const labelBaseScale = 0.01;
+      const label = new THREE.Sprite(labelMaterial)
+      root.add(label)
+
+      label.position.y = head.position.y+headRadius+size*labelBaseScale
+
+      label.scale.x = 1;
+      label.scale.y = canvas.height * labelBaseScale;
+
+      scene.add(root)
+      return root
+    }
+
+    makePerson(-3, 150, 32, 'Purple People Eater', 'purple');
+    makePerson(-0, 150, 32, 'Green Machine', 'green');
+    makePerson(+3, 150, 32, 'Red Menace', 'red');
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
