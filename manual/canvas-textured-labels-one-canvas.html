@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>canvas-textured-labels</title>
+  <title>canvas-textured-labels-one-canvas</title>
   <style>
     html, body {
       height: 100%;
@@ -80,32 +80,58 @@
     )
     const labelGeometry = new THREE.PlaneGeometry(1,1)
 
-    function makeLabelCanvas(size,name){
+    const ctx = document.createElement('canvas').getContext('2d')
+    function makeLabelCanvas(baseWidth,size,name){
       const borderSize = 2
-      const ctx = document.createElement('canvas').getContext('2d')
       const font =`${size}px bold sana-serif`
       ctx.font = font
 
+      const textWidth = ctx.measureText(name).width
       // 测量文本的长宽
       const doubleBorderSize = borderSize*2
-      const width = ctx.measureText(name).width+doubleBorderSize
+      const width = baseWidth+doubleBorderSize
       const height = size + doubleBorderSize
       ctx.canvas.width = width
       ctx.canvas.height = height
       // 需要重新设置字体样式
       ctx.font = font
-      ctx.textBaseline = "top"
-      ctx.textAlign="left"
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
       ctx.fillStyle = 'blue'
       ctx.fillRect(0,0,width,height)
+
+      const scaleFactor = Math.min(
+              1,baseWidth/textWidth
+      )
+      ctx.translate(width/2,height/2)
+      ctx.scale(scaleFactor,1)
+
+
+
       ctx.fillStyle = 'white'
       ctx.fillText(name,borderSize,borderSize)
       return ctx.canvas
     }
+    const forceTextureInitialization = function (){
+      const material = new THREE.MeshBasicMaterial()
+      const geometry = new THREE.PlaneGeometry()
+      const scene = new THREE.Scene()
+      scene.add(new THREE.Mesh(geometry,material))
+      return function forceTextureInitialization(texture){
+        material.map = texture
+        renderer.render(scene,camera)
+      }
+    }()
 
-    function makePerson(x,size,name,color){
-      const canvas = makeLabelCanvas(size,name)
+
+    function makePerson(x,labelWidth,size,name,color){
+      const canvas = makeLabelCanvas(labelWidth,size,name)
       const texture = new THREE.CanvasTexture(canvas)
+
+      texture.minFilter = THREE.LinearFilter;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      forceTextureInitialization(texture);
       const labelMaterial = new THREE.MeshBasicMaterial({
         map:texture,
         side:THREE.DoubleSide,
@@ -139,9 +165,9 @@
       return root
     }
 
-    makePerson(-3, 32, 'Purple People Eater', 'purple');
-    makePerson(-0, 32, 'Green Machine', 'green');
-    makePerson(+3, 32, 'Red Menace', 'red');
+    makePerson(-3, 150, 32, 'Purple People Eater', 'purple');
+    makePerson(-0, 150, 32, 'Green Machine', 'green');
+    makePerson(+3, 150, 32, 'Red Menace', 'red');
 
 
 
