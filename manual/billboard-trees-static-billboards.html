@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>billboard-trees-static-billboards</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 1000
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.set(0,2,5)
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 2, 0);
+    controls.update();
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('lightblue')
+
+    function addLight(position){
+      const color = 0xffffff
+      const intensity = 1
+      const light = new THREE.DirectionalLight(
+              color,intensity
+      )
+      light.position.set(...position)
+      scene.add(light)
+      scene.add(light.target)
+    }
+    addLight([-3,1,1])
+    addLight([2,1,.5])
+
+    const trunkRadius = .2
+    const trunkHeight = 1
+
+    const trunkRadialSegments = 12
+    const trunkGeometry = new THREE.CylinderGeometry(
+            trunkRadius,trunkRadius,
+            trunkHeight,trunkRadialSegments
+    )
+
+    const topRadius = trunkRadius*4
+    const topHeight = trunkHeight*2
+    const topSegments = 12
+
+    const topGeometry = new THREE.ConeGeometry(
+            topRadius,topHeight,topSegments
+    )
+
+    const trunkMaterial = new THREE.MeshPhongMaterial({
+      color:'brown',flatShading:true
+    })
+    const topMaterial = new THREE.MeshPhongMaterial({
+      color:'green'
+    })
+
+    function makeTree(x,z){
+      const root = new THREE.Object3D()
+      const trunk = new THREE.Mesh(
+              trunkGeometry,trunkMaterial
+      )
+      trunk.position.y = trunkHeight/2
+      root.add(trunk)
+
+      const top = new THREE.Mesh(topGeometry,topMaterial)
+      top.position.y = trunkHeight+topHeight/2
+      root.add(top)
+
+      root.position.set(x,0,z)
+      scene.add(root)
+      return root
+    }
+
+
+    function frameArea(sizeToFitScreen,boxSize,boxCenter,camera){
+      const halfSizeToFitOnScreen = sizeToFitScreen*0.5
+      const halfFov = THREE.MathUtils.degToRad(camera.fov*.5)
+      const distance = halfSizeToFitOnScreen/Math.tan(halfFov)
+
+      camera.position.copy(boxCenter)
+      camera.position.z +=distance
+      camera.updateProjectionMatrix()
+    }
+
+
+    function makeSpriteTexture(textureSize,obj){
+      const rt = new THREE.WebGLRenderTarget(
+              textureSize,textureSize
+      )
+      const aspect = 1
+      const camera = makeCamera()
+      scene.add(obj)
+
+      const box = new THREE.Box3().setFromObject(obj)
+      const boxSize = box.getSize(new THREE.Vector3())
+      const boxCenter = box.getCenter(new THREE.Vector3())
+      const fudge = 1.1
+      const size = Math.max(...boxSize.toArray())*fudge
+      frameArea(size,size,boxCenter,camera)
+
+      renderer.autoClear = false
+      renderer.setRenderTarget(rt)
+      renderer.render(scene,camera)
+      renderer.setRenderTarget(null)
+      renderer.autoClear = true
+      scene.remove(obj)
+
+      return {
+        offset:boxCenter.multiplyScalar(fudge),
+        scale:size,
+        texture:rt.texture
+      }
+
+    }
+
+
+    const tree = makeTree(0,0)
+    const facadeSize = 64
+    const treeSpriteInfo = makeSpriteTexture(facadeSize,tree)
+    function makeSprite(spriteInfo,x,z){
+      const {texture,offset,scale} = spriteInfo
+      const mat = new THREE.SpriteMaterial({
+        map:texture,
+        transparent:true
+      })
+      const sprite = new THREE.Sprite(mat)
+      scene.add(sprite)
+      sprite.position.set(
+              offset.x+x,
+              offset.y,
+              offset.z+z
+      )
+      sprite.scale.set(scale,scale,scale)
+    }
+
+
+    for (let z = -50; z <= 50; z += 10) {
+      for (let x = -50; x <= 50; x += 10) {
+        makeSprite(treeSpriteInfo, x, z);
+      }
+    }
+
+
+    {
+      const size = 400
+      const geometry = new THREE.PlaneGeometry(size,size)
+      const material = new THREE.MeshPhongMaterial({color:'gray'})
+      const mesh = new THREE.Mesh(geometry,material)
+      mesh.rotation.x = Math.PI*-.5
+      scene.add(mesh)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
