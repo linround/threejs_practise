@@ -46,7 +46,6 @@
 
     // 建立一个场景节点
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color('lightblue')
 
     function addLight(position){
       const color = 0xffffff
@@ -128,7 +127,6 @@
       const fudge = 1.1
       const size = Math.max(...boxSize.toArray())*fudge
       frameArea(size,size,boxCenter,camera)
-
       renderer.autoClear = false
       renderer.setRenderTarget(rt)
       renderer.render(scene,camera)
@@ -171,7 +169,7 @@
       }
     }
 
-
+    scene.background = new THREE.Color('lightblue')
     {
       const size = 400
       const geometry = new THREE.PlaneGeometry(size,size)
