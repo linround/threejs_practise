@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cleanup-loaded-files</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+  import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+
+  const gui = new GUI();
+  class ResourceTracker{
+    constructor() {
+      this.resources = new Set()
+    }
+    track(resource){
+      if(!resource) {
+        return resource
+      }
+      if(Array.isArray(resource)){
+        resource.forEach(resource=>this.track(resource))
+        return resource
+      }
+
+
+      if(resource.dispose || resource instanceof THREE.Object3D){
+        this.resources.add(resource)
+      }
+      if(resource instanceof  THREE.Object3D){
+        this.track(resource.geometry)
+        this.track(resource.material)
+        this.track(resource.children)
+      } else if(resource instanceof THREE.Material){
+        for(const value of Object.values(resource)){
+          if(value instanceof THREE.Texture){
+            this.track(value)
+          }
+        }
+        if(resource.uniforms){
+          for (const value of Object.values(resource.uniforms)){
+            if(value){
+              const uniformValue = value.value
+              if(uniformValue instanceof THREE.Texture || Array.isArray(uniformValue)){
+                this.track(uniformValue)
+              }
+            }
+          }
+        }
+
+
+
+      }
+      return resource
+    }
+    dispose(){
+      for(const resource of this.resources){
+        if(resource instanceof  THREE.Object3D){
+          // 先移除
+          if(resource.parent) {
+            resource.parent.remove(resource)
+          }
+        }
+        // 再对资源进行弃置
+        if(resource.dispose){
+          resource.dispose()
+        }
+      }
+      // 最终清空set即可
+      this.resources.clear()
+    }
+  }
+
+
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    function makeCamera (fov=75) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 5
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.z = 2
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('lightblue')
+
+    const controls = new OrbitControls(camera,canvas)
+    controls.update();
+    function addLight(...pos) {
+      const color = 0xFFFFFF;
+      const intensity = 0.8;
+      const light = new THREE.DirectionalLight(color, intensity);
+      light.position.set(...pos);
+      scene.add(light);
+    }
+    addLight(-1, 2, 4);
+    addLight( 2, -2, 3);
+
+
+    function frameArea(sizeToFitOnScreen,boxSize,boxCenter,camera){
+      const halfSizeToFitOnScreen = sizeToFitOnScreen/2
+      const halfFov = THREE.MathUtils.degToRad(camera.fov/2)
+      const distance = halfSizeToFitOnScreen/Math.tan(halfFov)
+
+      const direction = new THREE.Vector3()
+              .subVectors(camera.position,boxCenter)
+              .multiply(new THREE.Vector3(1,0,1))
+              .normalize()
+
+      camera.position.copy(
+              direction.multiplyScalar(distance).add(boxCenter)
+      )
+      camera.near = boxSize/100
+      camera.far = boxSize*100
+      camera.updateProjectionMatrix()
+
+      camera.lookAt(
+              boxCenter.x,
+              boxCenter.y,
+              boxCenter.z
+      )
+    }
+
+    const gltfLoader = new GLTFLoader()
+    function loadGLTF(url){
+      return new Promise((res,rej)=>{
+        gltfLoader.load(url,res,undefined,rej)
+      })
+    }
+
+
+    function waitSeconds(seconds = 0){
+      return new Promise(res=>setTimeout(res,seconds*1000))
+    }
+
+
+    const fileURLs = [
+            'resources/model/blend/cartoon_lowpoly_small_city_free_pack/scene.gltf',
+            'resources/model/3dbustchallange_submission/scene.gltf'
+    ]
+    async function loadFiles(){
+      for (;;){
+        for (const url of fileURLs){
+          const resMgr = new ResourceTracker()
+          const track = resMgr.track.bind(resMgr)
+          const glft = await loadGLTF(url)
+          const root = track(glft.scene)
+          scene.add(root)
+
+
+          const box = new THREE.Box3().setFromObject(root)
+          const boxSize = box.getSize(new THREE.Vector3()).length()
+          const boxCenter = box.getCenter(new THREE.Vector3())
+
+          frameArea(boxSize*1.1,boxSize,boxCenter,camera)
+
+          await waitSeconds(2)
+          renderer.render(scene,camera)
+          resMgr.dispose()
+          await waitSeconds(1)
+
+        }
+      }
+    }
+    loadFiles()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // 这里的time是毫秒级别
+    function render(time){
+      time *= 0.001
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
