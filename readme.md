@@ -57,6 +57,11 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 - 对于labels，只显示面向相机的label
 - 对于labels数量，根据区域面积，控制labels的个数
 
+
+## 框架的选择
+- webGPU 稳步地支持 threejs库以及babylonjs
+- [playCanvas在2022年，承诺支持webGPU]( https://github.com/playcanvas/engine/issues/3986);
+
 ## 区域识别方案
 - 使用gpu挑选
   - 例如在特定区域定义一个特殊的颜色，然后使用gpu获取像素的颜色，最终根据颜色值来判断选中的区域 
