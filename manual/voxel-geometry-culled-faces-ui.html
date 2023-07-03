@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>voxel-geometry-culled-faces-with-textures</title>
+    <title>voxel-geometry-culled-faces-ui</title>
     <style>
       html, body {
         height: 100%;
@@ -13,10 +13,77 @@
         height: 100%;
         display: block;
       }
+      #ui {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 5px;
+      }
+      #ui input[type=radio] {
+        width: 0;
+        height: 0;
+        display: none;
+      }
+      #ui input[type=radio] + label {
+        background-image: url('resources/images/minecraft/flourish-cc-by-nc-sa.png');
+        background-size: 1600% 400%;
+        image-rendering: pixelated;
+        width: 64px;
+        height: 64px;
+        display: inline-block;
+      }
+      #ui input[type=radio]:checked + label {
+        outline: 3px solid red;
+      }
+      @media (max-width: 600px), (max-height: 600px) {
+        #ui input[type=radio] + label {
+          width: 32px;
+          height: 32px;
+        }
+      }
     </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="ui">
+    <div class="tiles">
+        <input type="radio" name="voxel" id="voxel1" value="1">
+        <label for="voxel1" style="background-position:   -0% -0%"></label>
+        <input type="radio" name="voxel" id="voxel2" value="2">
+        <label for="voxel2" style="background-position: -100% -0%"></label>
+        <input type="radio" name="voxel" id="voxel3" value="3">
+        <label for="voxel3" style="background-position: -200% -0%"></label>
+        <input type="radio" name="voxel" id="voxel4" value="4">
+        <label for="voxel4" style="background-position: -300% -0%"></label>
+        <input type="radio" name="voxel" id="voxel5" value="5">
+        <label for="voxel5" style="background-position: -400% -0%"></label>
+        <input type="radio" name="voxel" id="voxel6" value="6">
+        <label for="voxel6" style="background-position: -500% -0%"></label>
+        <input type="radio" name="voxel" id="voxel7" value="7">
+        <label for="voxel7" style="background-position: -600% -0%"></label>
+        <input type="radio" name="voxel" id="voxel8" value="8">
+        <label for="voxel8" style="background-position: -700% -0%"></label>
+    </div>
+    <div class="tiles">
+        <input type="radio" name="voxel" id="voxel9"  value="9" >
+        <label for="voxel9"  style="background-position:  -800% -0%"></label>
+        <input type="radio" name="voxel" id="voxel10" value="10">
+        <label for="voxel10" style="background-position:  -900% -0%"></label>
+        <input type="radio" name="voxel" id="voxel11" value="11">
+        <label for="voxel11" style="background-position: -1000% -0%"></label>
+        <input type="radio" name="voxel" id="voxel12" value="12">
+        <label for="voxel12" style="background-position: -1100% -0%"></label>
+        <input type="radio" name="voxel" id="voxel13" value="13">
+        <label for="voxel13" style="background-position: -1200% -0%"></label>
+        <input type="radio" name="voxel" id="voxel14" value="14">
+        <label for="voxel14" style="background-position: -1300% -0%"></label>
+        <input type="radio" name="voxel" id="voxel15" value="15">
+        <label for="voxel15" style="background-position: -1400% -0%"></label>
+        <input type="radio" name="voxel" id="voxel16" value="16">
+        <label for="voxel16" style="background-position: -1500% -0%"></label>
+    </div>
+</div>
 </body>
 </html>
 <script type="module">
@@ -43,7 +110,14 @@
 
       const {cellSize} = this
       this.cellSliceSize = cellSize*cellSize
-      this.cell = new Uint8Array(cellSize*cellSize*cellSize)
+      this.cells = {}
+    }
+    computeCellId(x,y,z){
+      const {cellSize} = this
+      const cellX = Math.floor(x/cellSize)
+      const cellY = Math.floor(y/cellSize)
+      const cellZ = Math.floor(z/cellSize)
+      return `${cellX},${cellY},${cellZ}`
     }
     computeVoxelOffset(x,y,z){
       const {cellSize,cellSliceSize} = this
@@ -54,23 +128,29 @@
         voxelZ*cellSize+
         voxelX
     }
-    setVoxel(x, y, z, v) {
-      const cell = this.getCellForVoxel(x, y, z);
+    addCellForVoxel(x, y, z){
+      const cellId = this.computeCellId(x,y,z)
+      let cell = this.cells[cellId]
+      if(!cell){
+        const {cellSize} = this
+        cell = new Uint8Array(cellSize*cellSize*cellSize)
+        this.cells[cellId] = cell
+      }
+      return cell
+    }
+    setVoxel(x, y, z,v, addCell = true) {
+      let cell = this.getCellForVoxel(x, y, z);
       if (!cell) {
-        return;
+        if(!addCell) {
+          return
+        }
+        cell = this.addCellForVoxel(x, y, z)
       }
       const voxelOffset = this.computeVoxelOffset(x, y, z);
-      cell[voxelOffset] = v;
+      cell[voxelOffset] = v
     }
     getCellForVoxel(x, y, z) {
-      const {cellSize} = this;
-      const cellX = Math.floor(x / cellSize);
-      const cellY = Math.floor(y / cellSize);
-      const cellZ = Math.floor(z / cellSize);
-      if (cellX !== 0 || cellY !== 0 || cellZ !== 0) {
-        return null;
-      }
-      return this.cell;
+      return this.cell[this.computeCellId(x,y,z)]
     }
     getVoxel(x,y,z){
       const cell = this.getCellForVoxel(x,y,z)
@@ -351,6 +431,33 @@
         requestAnimationFrame(render);
       }
     }
+
+
+    let currentVoxel = 0
+    let currentId
+    document.querySelectorAll('#ui .tiles input[type=radio][name=voxel]').forEach(elem=>{
+      elem.addEventListener('click',allUncheck)
+    })
+    function allUncheck(){
+      if(this.id===currentId){
+        this.checked = false
+        currentId = undefined
+        currentVoxel = 0
+      } else {
+        currentId = this.id
+        currentVoxel = parseInt(this.value)
+      }
+    }
+
+    function getCanvasRelativePosition(event){
+      const rect = canvas.getBoundingClientRect()
+      return {
+        x:event.clientX - rect.left,
+        y:event.clientY-rect.top
+      }
+    }
+
+
 
 
     controls.addEventListener('change', requestRenderIfNotRequested);
