@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>voxel-geometry-culled-faces</title>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    #c {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>voxel-geometry-culled-faces-with-textures</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -26,10 +26,22 @@
 
   const gui = new GUI();
 
+  /**
+   * todo
+   * 每一列一个体素
+   * 每一列的第一行是两边的体素
+   * 每一列的第二行是顶部的体素
+   * 每一列的第三行是底部的体素
+   */
 
   class VoxelWorld{
-    constructor(cellSize) {
-      this.cellSize = cellSize
+    constructor(options) {
+      this.cellSize = options.cellSize
+      this.tileSize = options.tileSize
+      this.tileTextureWidth = options.tileTextureWidth
+      this.tileTextureHeight = options.tileTextureHeight
+
+      const {cellSize} = this
       this.cellSliceSize = cellSize*cellSize
       this.cell = new Uint8Array(cellSize*cellSize*cellSize)
     }
@@ -39,8 +51,8 @@
       const voxelY = THREE.MathUtils.euclideanModulo(y,cellSize)|0
       const voxelZ = THREE.MathUtils.euclideanModulo(z,cellSize)|0
       return voxelY*cellSliceSize+
-              voxelZ*cellSize+
-              voxelX
+        voxelZ*cellSize+
+        voxelX
     }
     setVoxel(x, y, z, v) {
       const cell = this.getCellForVoxel(x, y, z);
@@ -70,12 +82,15 @@
       return cell[voxelOffset]
     }
     generateGeometryDataForCell(cellX,cellY,cellZ){
-      const {cellSize} = this
+      const {
+        cellSize,tileSize,tileTextureHeight,tileTextureWidth
+      } = this
 
 
       const positions = [] // 位置
       const normals = [] // 法向量
       const indices = [] // 索引
+      const uvs = [] // 纹理
 
 
       const startX = cellX*cellSize
@@ -90,23 +105,30 @@
             // 获取这个像素体
             const voxel = this.getVoxel(voxelX,voxelY,voxelZ)
             if(voxel) {
+              const uvVoxel = voxel-1
               // 得到某个方向相邻的那个点
-              for (const {dir,corners} of VoxelWorld.faces){
+              // uvRow 表示是哪一行的纹理样式
+              for (const {dir,corners,uvRow} of VoxelWorld.faces){
                 const neighbor = this.getVoxel(
-                        voxelX+dir[0],voxelY+dir[1],voxelZ+dir[2],
+                  voxelX+dir[0],voxelY+dir[1],voxelZ+dir[2],
                 )
                 //   如果在这个方向上没有对应的点，那么就会有一个面
                 if(!neighbor) {
                   const ndx = positions.length/3
-                  for(const pos of corners){
+                  // uv 表示对应的坐标点所对应的贴图坐标
+                  for(const {pos,uv} of corners){
                     positions.push(pos[0]+x,pos[1]+y,pos[2]+z)
                     normals.push(...dir)
+                    uvs.push(
+                      (uvVoxel+uv[0])*tileSize/tileTextureWidth,
+                      1-(uvRow+1-uv[1])*tileSize/tileTextureHeight
+                    )
 
                   }
                   // 绘制三角形 位置索引
                   indices.push(
-                          ndx,ndx+1,ndx+2,
-                          ndx+2,ndx+1,ndx+3
+                    ndx,ndx+1,ndx+2,
+                    ndx+2,ndx+1,ndx+3
                   )
                 }
               }
@@ -115,7 +137,7 @@
         }
       }
       return {
-        positions,normals,indices
+        positions,normals,indices,uvs
       }
     }
   }
@@ -123,58 +145,64 @@
 
 
   VoxelWorld.faces = [
-    { // 左
+    { // left
+      uvRow: 0,
       dir: [ -1,  0,  0, ],
       corners: [
-        [ 0, 1, 0 ],
-        [ 0, 0, 0 ],
-        [ 0, 1, 1 ],
-        [ 0, 0, 1 ],
+        { pos: [ 0, 1, 0 ], uv: [ 0, 1 ], },
+        { pos: [ 0, 0, 0 ], uv: [ 0, 0 ], },
+        { pos: [ 0, 1, 1 ], uv: [ 1, 1 ], },
+        { pos: [ 0, 0, 1 ], uv: [ 1, 0 ], },
       ],
     },
-    { // 右
+    { // right
+      uvRow: 0,
       dir: [  1,  0,  0, ],
       corners: [
-        [ 1, 1, 1 ],
-        [ 1, 0, 1 ],
-        [ 1, 1, 0 ],
-        [ 1, 0, 0 ],
+        { pos: [ 1, 1, 1 ], uv: [ 0, 1 ], },
+        { pos: [ 1, 0, 1 ], uv: [ 0, 0 ], },
+        { pos: [ 1, 1, 0 ], uv: [ 1, 1 ], },
+        { pos: [ 1, 0, 0 ], uv: [ 1, 0 ], },
       ],
     },
-    { // 下
+    { // bottom
+      uvRow: 1,
       dir: [  0, -1,  0, ],
       corners: [
-        [ 1, 0, 1 ],
-        [ 0, 0, 1 ],
-        [ 1, 0, 0 ],
-        [ 0, 0, 0 ],
+        { pos: [ 1, 0, 1 ], uv: [ 1, 0 ], },
+        { pos: [ 0, 0, 1 ], uv: [ 0, 0 ], },
+        { pos: [ 1, 0, 0 ], uv: [ 1, 1 ], },
+        { pos: [ 0, 0, 0 ], uv: [ 0, 1 ], },
       ],
     },
-    { // 上
+    { // top
+      uvRow: 2,
       dir: [  0,  1,  0, ],
       corners: [
-        [ 0, 1, 1 ],
-        [ 1, 1, 1 ],
-        [ 0, 1, 0 ],
-        [ 1, 1, 0 ],
+        { pos: [ 0, 1, 1 ], uv: [ 1, 1 ], },
+        { pos: [ 1, 1, 1 ], uv: [ 0, 1 ], },
+        { pos: [ 0, 1, 0 ], uv: [ 1, 0 ], },
+        { pos: [ 1, 1, 0 ], uv: [ 0, 0 ], },
       ],
     },
-    { // 后
+    { // back
+      uvRow: 0,
       dir: [  0,  0, -1, ],
       corners: [
-        [ 1, 0, 0 ],
-        [ 0, 0, 0 ],
-        [ 1, 1, 0 ],
-        [ 0, 1, 0 ],
+        { pos: [ 1, 0, 0 ], uv: [ 0, 0 ], },
+        { pos: [ 0, 0, 0 ], uv: [ 1, 0 ], },
+        { pos: [ 1, 1, 0 ], uv: [ 0, 1 ], },
+        { pos: [ 0, 1, 0 ], uv: [ 1, 1 ], },
       ],
     },
-    { // 前
+    { // front
+      uvRow: 0,
       dir: [  0,  0,  1, ],
       corners: [
-        [ 0, 0, 1 ],
-        [ 1, 0, 1 ],
-        [ 0, 1, 1 ],
-        [ 1, 1, 1 ],
+        { pos: [ 0, 0, 1 ], uv: [ 0, 0 ], },
+        { pos: [ 1, 0, 1 ], uv: [ 1, 0 ], },
+        { pos: [ 0, 1, 1 ], uv: [ 0, 1 ], },
+        { pos: [ 1, 1, 1 ], uv: [ 1, 1 ], },
       ],
     },
   ]
@@ -194,9 +222,9 @@
     }
     const camera = makeCamera()
     camera.position.set(
-            -cellSize*.3,
-            cellSize*.8,
-            -cellSize*.3)
+      -cellSize*.3,
+      cellSize*.8,
+      -cellSize*.3)
 
     const controls = new OrbitControls(camera,canvas)
     controls.target.set(cellSize / 2, cellSize / 3, cellSize / 2);
@@ -208,46 +236,74 @@
 
 
     // 在场景中添加光源
-    {
-      // 创建平行光
-      const light = new THREE.DirectionalLight(0xffffff,1)
-      //设置光源位置
-      light.position.set(-1,2,4)
-      scene.add(light)
-    }
 
-    const world = new VoxelWorld(cellSize)
+    function addLight(x, y, z) {
+      const color = 0xFFFFFF;
+      const intensity = 1;
+      const light = new THREE.DirectionalLight(color, intensity);
+      light.position.set(x, y, z);
+      scene.add(light);
+    }
+    addLight(-1,  2,  4);
+    addLight( 1, -1, -2);
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min) + min);
+    }
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load('./resources/images/minecraft/flourish-cc-by-nc-sa.png',render)
+    texture.magFilter = THREE.NearestFilter
+    texture.minFilter = THREE.NearestFilter
+
+    const tileSize = 16
+    const tileTextureWidth = 256
+    const tileTextureHeight = 64
+    const world = new VoxelWorld({
+      cellSize,
+      tileSize,
+      tileTextureWidth,
+      tileTextureHeight
+    })
     for (let y=0;y<cellSize;y++){
       for (let z=0;z<cellSize;z++){
         for (let x=0;x<cellSize;x++){
           const height = (Math.sin(x/cellSize*Math.PI*2)+Math.sin(z/cellSize*Math.PI*3))*(cellSize/6)+(cellSize/2)
           if(y<height){
-            world.setVoxel(x,y,z,1)
+            world.setVoxel(x,y,z,randInt(1, 17))
           }
         }
       }
     }
     const {
       positions,
-            normals,
-            indices
+      normals,
+      indices,
+      uvs
     } = world.generateGeometryDataForCell(0,0,0)
     const geometry = new THREE.BufferGeometry()
-    const material = new THREE.MeshLambertMaterial({color:'green'})
+    const material = new THREE.MeshLambertMaterial({
+      map:texture,
+      side:THREE.DoubleSide,
+      alphaTest:0.1,
+      transparent:true
+    })
     const positionNumComponents = 3
     const normalNumComponents = 3
+    const uvNumComponents = 2;
     geometry.setAttribute(
-            'position',
-            new THREE.BufferAttribute(
-                    new Float32Array(positions),positionNumComponents
-            )
+      'position',
+      new THREE.BufferAttribute(
+        new Float32Array(positions),positionNumComponents
+      )
     )
     geometry.setAttribute(
-            'normal',
-            new THREE.BufferAttribute(
-                    new Float32Array(normals),normalNumComponents
-            )
+      'normal',
+      new THREE.BufferAttribute(
+        new Float32Array(normals),normalNumComponents
+      )
     )
+    geometry.setAttribute(
+      'uv',
+      new THREE.BufferAttribute(new Float32Array(uvs), uvNumComponents))
     geometry.setIndex(indices)
     const mesh = new THREE.Mesh(geometry,material)
     scene.add(mesh)
