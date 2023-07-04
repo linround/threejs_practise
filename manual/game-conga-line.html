@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>game-conga-line</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from '../build/three.module'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+  import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+  import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+
+    const fov = 45;
+    const aspect = 2;  // the canvas default
+    const near = 0.1;
+    const far = 1000;
+    const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    camera.position.set(0, 40, 80);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, 5, 0);
+    controls.update();
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('white')
+
+
+    function addLight(...pos){
+      const color = 0xffffff
+      const intensity = .8
+      const light = new THREE.DirectionalLight(color,intensity)
+      light.position.set(...pos)
+      scene.add(light)
+      scene.add(light.target)
+    }
+    addLight(5,5,2)
+    addLight(-5,5,5)
+
+    const manager = new THREE.LoadingManager()
+    manager.onLoad = init
+    manager.onProgress = (url,itemsLoaded,itemsTotal)=>{
+    }
+
+    const models = {
+      pig:    { url: 'resources/model/animals/Pig.gltf' },
+      cow:    { url: 'resources/model/animals/Cow.gltf' },
+      llama:  { url: 'resources/model/animals/Llama.gltf' },
+      pug:    { url: 'resources/model/animals/Pug.gltf' },
+      sheep:  { url: 'resources/model/animals/Sheep.gltf' },
+      zebra:  { url: 'resources/model/animals/Zebra.gltf' },
+      horse:  { url: 'resources/model/animals/Horse.gltf' },
+      knight: { url: 'resources/model/knight/KnightCharacter.gltf' },
+    };
+
+    {
+      const gltfLoader = new GLTFLoader(manager)
+      for(const model of Object.values(models)){
+        gltfLoader.load(model.url,(gltf)=>{
+          model.gltf = gltf
+        })
+      }
+    }
+
+
+    function prepModelsAndAnimations() {
+      const box = new THREE.Box3();
+      const size = new THREE.Vector3();
+      Object.values(models).forEach(model => {
+        box.setFromObject(model.gltf.scene);
+        box.getSize(size);
+        model.size = size.length();
+        const animsByName = {};
+        model.gltf.animations.forEach((clip) => {
+          animsByName[clip.name] = clip;
+          if (clip.name === 'Walk') {
+            clip.duration /= 2;
+          }
+        });
+        model.animations = animsByName;
+      });
+    }
+
+
+    class InputManager {
+      constructor() {
+        this.keys = {}
+        const keyMap = new Map()
+        const setKey = (keyName,pressed)=>{
+          const keyState = this.keys[keyName]
+          keyState.justPressed = pressed &&!keyState.down
+          keyState.down = pressed
+        }
+        const addKey = (keyCode,name)=>{
+          this.keys[name] = {down:false,justPressed:false}
+          keyMap.set(keyCode,name)
+        }
+        const setKeyFromKeyCode = (keyCode,pressed)=>{
+          const keyName = keyMap.get(keyCode)
+          if(!keyName){
+            return
+          }
+          setKey(keyName,pressed)
+        }
+        addKey(37, 'left');
+        addKey(39, 'right');
+        addKey(38, 'up');
+        addKey(40, 'down');
+        addKey(90, 'a');
+        addKey(88, 'b');
+        window.addEventListener('keydown',e=>{
+          setKeyFromKeyCode(e.keyCode,true)
+        })
+        window.addEventListener('keyup',e=>{
+          setKeyFromKeyCode(e.keyCode,false)
+        })
+
+        const handleMouseMove = (e) => {
+          e.preventDefault();
+          canvas.focus();
+          window.addEventListener('pointermove', handleMouseMove);
+          window.addEventListener('pointerup', handleMouseUp);
+        };
+        function handleMouseUp() {
+          window.removeEventListener('pointermove', handleMouseMove);
+          window.removeEventListener('pointerup', handleMouseUp);
+        }
+
+      }
+      update(){
+        for(const keyState of Object.values(this.keys)){
+          if(keyState.justPressed){
+            keyState.justPressed = false
+          }
+        }
+      }
+    }
+
+    function removeArrayElement(array,element){
+      const ndx = array.indexOf(element)
+      if(ndx>=0){
+        array.splice(ndx,1)
+      }
+    }
+    class SafeArray{
+      constructor() {
+        this.array = []
+        this.addQueue = []
+        this.removeQueue = new Set()
+      }
+      get isEmpty(){
+        return this.addQueue.length+this.array.length > 0
+      }
+      add(element){
+        this.addQueue.push(element)
+      }
+      remove(element){
+        this.removeQueue.add(element)
+      }
+      forEach(fn){
+        this._addQueued()
+        this._removeQueued()
+        for(const element of this.array){
+          if(this.removeQueue.has(element)){
+            continue
+          }
+          fn(element)
+        }
+      }
+      _addQueued(){
+        if(this.addQueue.length){
+          this.array.splice(this.array.length,0,...this.addQueue)
+          this.addQueue = []
+        }
+      }
+      _removeQueued(){
+        if(this.removeQueue.size){
+          this.array = this.array.filter(element=>{
+            !this.removeQueue.has(element)
+          })
+          this.removeQueue.clear()
+        }
+      }
+    }
+
+
+
+    class GameObjectManager{
+      constructor() {
+        this.gameObjects = new SafeArray()
+      }
+      createGameObject(parent,name){
+        const gameObject = new GameObject(parent,name)
+        this.gameObjects.add(gameObject)
+        return gameObject
+      }
+      removeGameObject(gameObject){
+        this.gameObjects.remove(gameObject)
+      }
+      update(){
+        this.gameObjects.forEach(gameObject=>gameObject.update())
+      }
+    }
+
+
+
+    const kForward = new THREE.Vector3(0,0,1)
+    const globals = {
+      time: 0,
+      deltaTime: 0,
+      moveSpeed:16,
+      camera
+    };
+    const gameObjectManager = new GameObjectManager();
+    const inputManager = new InputManager()
+    class GameObject {
+      constructor(parent,name) {
+        this.name = name
+        this.components = []
+        this.transform = new THREE.Object3D()
+        parent.add(this.transform)
+      }
+      addComponent(ComponentType,...args){
+        const component = new ComponentType(this,...args)
+        this.components.push(component)
+        return component
+      }
+      removeComponent(component){
+        removeArrayElement(this.components,component)
+      }
+      getComponent(ComponentType){
+        return this.components.find(c=>c instanceof ComponentType)
+      }
+      update(){
+        for (const component of this.components){
+          component.update()
+        }
+      }
+    }
+    class Component {
+      constructor(gameObject) {
+        this.gameObject = gameObject
+      }
+      update(){}
+    }
+    class CameraInfo extends Component{
+      constructor(gameObject) {
+        super(gameObject)
+        this.projScreenMatrix = new THREE.Matrix4()
+        this.frustum = new THREE.Frustum()
+      }
+      update(){
+        const {camera}= globals
+        this.projScreenMatrix.multiplyMatrices(
+                camera.projectionMatrix,
+                camera.matrixWorldInverse
+        )
+        this.frustum.setFromProjectionMatrix(this.projScreenMatrix)
+      }
+    }
+
+    class SkinInstance extends Component{
+      constructor(gameObject,model) {
+        super(gameObject)
+        this.model = model
+        this.animRoot = SkeletonUtils.clone(this.model.gltf.scene)
+        this.mixer = new THREE.AnimationMixer(this.animRoot)
+        gameObject.transform.add(this.animRoot)
+        this.actions = {}
+      }
+      setAnimation(animName){
+        const clip = this.model.animations[animName]
+        for (const action of Object.values(this.actions)){
+          action.enabled = false
+        }
+        const action = this.mixer.clipAction(clip);
+        action.enabled = true
+        action.reset()
+        action.play()
+        this.actions[animName] = action
+      }
+      update(){
+        this.mixer.update(globals.deltaTime)
+      }
+    }
+    class FiniteStateMachine {
+      constructor(states, initialState) {
+        this.states = states;
+        this.transition(initialState);
+      }
+      get state() {
+        return this.currentState;
+      }
+      transition(state) {
+        const oldState = this.states[this.currentState];
+        if (oldState && oldState.exit) {
+          oldState.exit.call(this);
+        }
+        this.currentState = state;
+        const newState = this.states[state];
+        if (newState.enter) {
+          newState.enter.call(this);
+        }
+      }
+      update() {
+        const state = this.states[this.currentState];
+        if (state.update) {
+          state.update.call(this);
+        }
+      }
+    }
+
+    class StateDisplayHelper extends Component {
+      constructor(gameObject, size) {
+        super(gameObject);
+        this.elem = document.createElement('div');
+        this.pos = new THREE.Vector3();
+
+        this.helper = new THREE.PolarGridHelper(size / 2, 1, 1, 16);
+        gameObject.transform.add(this.helper);
+      }
+      setState(s) {
+        this.elem.textContent = s;
+      }
+      setColor(cssColor) {
+        this.elem.style.color = cssColor;
+        this.helper.material.color.set(cssColor);
+      }
+      update() {
+        this.helper.visible = globals.debug;
+        if (!globals.debug) {
+          return;
+        }
+        const {pos} = this;
+        const {transform} = this.gameObject;
+        const {canvas} = globals;
+        pos.copy(transform.position);
+
+        // get the normalized screen coordinate of that position
+        // x and y will be in the -1 to +1 range with x = -1 being
+        // on the left and y = -1 being on the bottom
+        pos.project(globals.camera);
+
+        // convert the normalized position to CSS coordinates
+        const x = (pos.x *  .5 + .5) * canvas.clientWidth;
+        const y = (pos.y * -.5 + .5) * canvas.clientHeight;
+
+        // move the elem to that position
+        this.elem.style.transform = `translate(-50%, -50%) translate(${x}px,${y}px)`;
+      }
+    }
+    class Player extends Component {
+      constructor(gameObject) {
+        super(gameObject);
+        const model = models.knight;
+        globals.playerRadius = model.size / 2;
+        this.skinInstance = gameObject.addComponent(SkinInstance, model);
+
+        this.skinInstance.setAnimation('Run');
+        this.turnSpeed = globals.moveSpeed/4
+
+        this.offscreentTimer = 0
+        this.maxTimeOffScreen = 1
+      }
+      update(){
+        const {deltaTime,moveSpeed,cameraInfo} = globals
+        const {transform} = this.gameObject
+        const delta = (inputManager.keys.left.down  ?  1 : 0) +
+                (inputManager.keys.right.down ? -1 : 0);
+        transform.rotation.y+=this.turnSpeed*delta*deltaTime
+        transform.translateOnAxis(kForward,moveSpeed*deltaTime)
+
+        const {frustum} = cameraInfo
+        if(frustum.containsPoint(transform.position)){
+          this.offscreentTimer = 0
+        }else {
+          this.offscreentTimer+=deltaTime
+          if(this.offscreentTimer>=this.maxTimeOffScreen){
+            console.log('离开了屏幕')
+            transform.position.set(0,0,0)
+          }
+        }
+      }
+    }
+    function isClose(obj1, obj1Radius, obj2, obj2Radius) {
+      const minDist = obj1Radius + obj2Radius;
+      const dist = obj1.position.distanceTo(obj2.position);
+      return dist < minDist;
+    }
+    function minMagnitude(v, min) {
+      return Math.abs(v) > min
+              ? min * Math.sign(v)
+              : v;
+    }
+    const aimTowardAndGetDistance = function (){
+      const delta = new THREE.Vector3();
+      return function aimTowardAndGetDistance(source, targetPos, maxTurn) {
+        delta.subVectors(targetPos, source.position);
+        const targetRot = Math.atan2(delta.x, delta.z) + Math.PI * 1.5
+        const deltaRot = (targetRot - source.rotation.y + Math.PI * 1.5)
+                % (Math.PI * 2) - Math.PI;
+        const deltaRotation = minMagnitude(deltaRot, maxTurn);
+        source.rotation.y = THREE.MathUtils.euclideanModulo(
+                source.rotation.y + deltaRotation, Math.PI * 2)
+        return delta.length()
+      }
+    }()
+    class Animal extends Component {
+      constructor(gameObject, model) {
+        super(gameObject);
+        this.helper = gameObject.addComponent(StateDisplayHelper, model.size);
+        const hitRadius = model.size / 2;
+        const skinInstance = gameObject.addComponent(SkinInstance, model);
+        skinInstance.mixer.timeScale = globals.moveSpeed / 4;
+        const transform = gameObject.transform;
+        const playerTransform = globals.player.gameObject.transform;
+        const maxTurnSpeed = Math.PI * (globals.moveSpeed / 4);
+        const targetHistory = [];
+        let targetNdx = 0;
+
+        function addHistory() {
+          const targetGO = globals.congaLine[targetNdx];
+          const newTargetPos = new THREE.Vector3();
+          newTargetPos.copy(targetGO.transform.position);
+          targetHistory.push(newTargetPos);
+        }
+
+        this.fsm = new FiniteStateMachine({
+          idle: {
+            enter: () => {
+              skinInstance.setAnimation('Idle');
+            },
+            update: () => {
+              // check if player is near
+              if (isClose(transform, hitRadius, playerTransform, globals.playerRadius)) {
+                this.fsm.transition('waitForEnd');
+              }
+            },
+          },
+          waitForEnd: {
+            enter: () => {
+              skinInstance.setAnimation('Jump');
+            },
+            update: () => {
+              // get the gameObject at the end of the conga line
+              const lastGO = globals.congaLine[globals.congaLine.length - 1];
+              const deltaTurnSpeed = maxTurnSpeed * globals.deltaTime;
+              const targetPos = lastGO.transform.position;
+              aimTowardAndGetDistance(transform, targetPos, deltaTurnSpeed);
+              // check if last thing in conga line is near
+              if (isClose(transform, hitRadius, lastGO.transform, globals.playerRadius)) {
+                this.fsm.transition('goToLast');
+              }
+            },
+          },
+          goToLast: {
+            enter: () => {
+              // remember who we're following
+              targetNdx = globals.congaLine.length - 1;
+              // add ourselves to the conga line
+              globals.congaLine.push(gameObject);
+              skinInstance.setAnimation('Walk');
+            },
+            update: () => {
+              addHistory();
+              // walk to the oldest point in the history
+              const targetPos = targetHistory[0];
+              const maxVelocity = globals.moveSpeed * globals.deltaTime;
+              const deltaTurnSpeed = maxTurnSpeed * globals.deltaTime;
+              const distance = aimTowardAndGetDistance(transform, targetPos, deltaTurnSpeed);
+              const velocity = distance;
+              transform.translateOnAxis(kForward, Math.min(velocity, maxVelocity));
+              if (distance <= maxVelocity) {
+                this.fsm.transition('follow');
+              }
+            },
+          },
+          follow: {
+            update: () => {
+              addHistory();
+              // remove the oldest history and just put ourselves there.
+              const targetPos = targetHistory.shift();
+              transform.position.copy(targetPos);
+              const deltaTurnSpeed = maxTurnSpeed * globals.deltaTime;
+              aimTowardAndGetDistance(transform, targetHistory[0], deltaTurnSpeed);
+            },
+          },
+        }, 'idle');
+      }
+      update() {
+        this.fsm.update();
+        const dir = THREE.MathUtils.radToDeg(this.gameObject.transform.rotation.y);
+        this.helper.setState(`${this.fsm.state}:${dir.toFixed(0)}`);
+      }
+    }
+
+
+
+    const mixerInfos = []
+    function init(){
+      prepModelsAndAnimations()
+      {
+        const gameObject = gameObjectManager.createGameObject(camera,'camera')
+        globals.cameraInfo = gameObject.addComponent(CameraInfo)
+      }
+      {
+        const gameObject = gameObjectManager.createGameObject(scene,'player')
+        globals.player = gameObject.addComponent(Player)
+        globals.congaLine = [gameObject]
+      }
+      const animalModelNames = [
+              'pig',
+              'cow',
+              'llama',
+              'pug',
+              'sheep',
+              'zebra',
+              'horse'
+      ]
+      animalModelNames.forEach((name,ndx)=>{
+        const gameObject = gameObjectManager.createGameObject(scene,name)
+        gameObject.addComponent(Animal,models[name])
+        gameObject.transform.position.x = (ndx+1)*5
+      })
+
+
+    }
+    function playNextAction(mixerInfo){
+      const {actions,actionNdx} = mixerInfo
+      const nextActionNdx = (actionNdx+1)%actions.length
+      mixerInfo.actionNdx = nextActionNdx
+      actions.forEach((action,ndx)=>{
+        const enabled = ndx === nextActionNdx
+        action.enabled = enabled
+        if(enabled){
+          action.play()
+        }
+      })
+    }
+
+
+
+
+
+    let then = 0
+
+    // 这里的time是毫秒级别
+    function render(now){
+      globals.time = now*0.001
+      globals.deltaTime = Math.min(globals.time-then,1/20)
+      then = globals.time
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+      gameObjectManager.update()
+      inputManager.update()
+
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+    window.addEventListener('keydown',e=>{
+      const mixerInfo = mixerInfos[e.keyCode-49]
+      if(!mixerInfo){
+        return
+      }
+      playNextAction(mixerInfo)
+    })
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
