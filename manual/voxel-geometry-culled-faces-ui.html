@@ -435,8 +435,8 @@
     const material = new THREE.MeshLambertMaterial({
       map:texture,
       side:THREE.DoubleSide,
-      alphaTest:0.1,
-      transparent:true
+      alphaTest:1,
+      transparent:false
     })
 
     const cellIdToMesh = {}
