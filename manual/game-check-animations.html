@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>game-check-animations</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+</body>
+</html>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from 'lil-gui';
+  import {OrbitControls} from 'three/addons/controls/OrbitControls';
+  import {GLTFLoader} from "three/addons/loaders/GLTFLoader";
+  import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+
+  const gui = new GUI();
+
+  function main(){
+
+    const canvas = document.querySelector('#c')
+    const renderer = new THREE.WebGLRenderer({canvas})
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    function makeCamera (fov=45) {
+      const aspect = 2
+      const zNear = 0.1
+      const zFar = 100
+      // 创建一个透视相机（视锥体）
+      return new THREE.PerspectiveCamera(fov,aspect,zNear,zFar)
+    }
+    const camera = makeCamera()
+    camera.position.set(0,20,40)
+    const controls = new OrbitControls(camera,canvas)
+    controls.target.set(0, 5, 0);
+    controls.update();
+
+    // 建立一个场景节点
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('white')
+
+
+    function addLight(...pos){
+      const color = 0xffffff
+      const intensity = .8
+      const light = new THREE.DirectionalLight(color,intensity)
+      light.position.set(...pos)
+      scene.add(light)
+      scene.add(light.target)
+    }
+    addLight(5,5,2)
+    addLight(-5,5,5)
+
+    const manager = new THREE.LoadingManager()
+    manager.onLoad = init
+    manager.onProgress = (url,itemsLoaded,itemsTotal)=>{
+      console.log(url,itemsLoaded,itemsTotal)
+    }
+
+    const models = {
+      pig:    { url: 'resources/model/animals/Pig.gltf' },
+      cow:    { url: 'resources/model/animals/Cow.gltf' },
+      llama:  { url: 'resources/model/animals/Llama.gltf' },
+      pug:    { url: 'resources/model/animals/Pug.gltf' },
+      sheep:  { url: 'resources/model/animals/Sheep.gltf' },
+      zebra:  { url: 'resources/model/animals/Zebra.gltf' },
+      horse:  { url: 'resources/model/animals/Horse.gltf' },
+      knight: { url: 'resources/model/knight/KnightCharacter.gltf' },
+    };
+
+    {
+      const gltfLoader = new GLTFLoader(manager)
+      for(const model of Object.values(models)){
+        gltfLoader.load(model.url,(gltf)=>{
+          model.gltf = gltf
+        })
+      }
+    }
+
+    function preModelsAndAnimations(){
+      Object.values(models).forEach(model=>{
+        const animsByName = {}
+        model.gltf.animations.forEach(clip=>{
+          animsByName[clip.name] =clip
+        })
+        model.animations = animsByName
+      })
+    }
+
+    const mixerInfos = []
+    function init(){
+      preModelsAndAnimations()
+      Object.values(models).forEach((model,ndx)=>{
+        const clonedScene = SkeletonUtils.clone(model.gltf.scene)
+        const root = new THREE.Object3D()
+        root.add(clonedScene)
+        scene.add(root)
+        root.position.x = (ndx-3)*3
+        const mixer = new THREE.AnimationMixer(clonedScene)
+        const actions = Object.values(model.animations).map(clip=>{
+          return mixer.clipAction(clip)
+        })
+        const mixerInfo = {
+          mixer,actions,actionNdx:-1
+        }
+        mixerInfos.push(mixerInfo)
+        playNextAction(mixerInfo)
+
+      })
+    }
+    function playNextAction(mixerInfo){
+      const {actions,actionNdx} = mixerInfo
+      const nextActionNdx = (actionNdx+1)%actions.length
+      mixerInfo.actionNdx = nextActionNdx
+      actions.forEach((action,ndx)=>{
+        const enabled = ndx === nextActionNdx
+        action.enabled = enabled
+        if(enabled){
+          action.play()
+        }
+      })
+    }
+
+
+
+
+
+    let then = 0
+
+    // 这里的time是毫秒级别
+    function render(now){
+      now *= 0.001
+      const deltaTime = (now-then)/0.5
+      then = now
+      const canvas = renderer.domElement;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+
+      for (const {mixer} of mixerInfos){
+        mixer.update(deltaTime)
+      }
+
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+
+    window.addEventListener('keydown',e=>{
+      const mixerInfo = mixerInfos[e.keyCode-49]
+      if(!mixerInfo){
+        return
+      }
+      playNextAction(mixerInfo)
+    })
+
+
+
+
+
+
+
+
+
+
+  }
+  main()
+
+</script>
