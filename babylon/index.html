@@ -29,60 +29,35 @@
 </html>
 <script type="module">
   import * as BABYLON from 'babylonjs'
-  const canvas = document.getElementById("renderCanvas")
-  let engine = null;
-  let scene = null;
-  let sceneToRender = null;
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    BABYLON.SceneLoader.ImportMeshAsync('','./files/','box.babylon')
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      -Math.PI/2,
+      Math.PI/2.5,
+      5,
+      new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+      'light',
+      new BABYLON.Vector3(1,1,0),
+      scene
+    )
+    return scene
 
 
-  const createDefaultEngine = function() {
-    return new BABYLON.Engine(
-      canvas, true,
-      { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}
-    );
-  };
-  const startRenderLoop = function (engine, canvas) {
-      engine.runRenderLoop(function () {
-        if (sceneToRender && sceneToRender.activeCamera) {
-          sceneToRender.render();
-        }
-      });
-    }
-  const createScene =  () => {
-      const scene = new BABYLON.Scene(engine);
-
-      const camera = new BABYLON.ArcRotateCamera(
-        "camera",
-        -Math.PI / 2,
-        Math.PI / 2.5,
-        3,
-        new BABYLON.Vector3(0, 0, 0),
-        scene
-      );
-      camera.attachControl(canvas, true);
-
-       new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 5, 0),scene);
-
-       BABYLON.MeshBuilder.CreateBox("box", {width:1,height:1,depth:1});
-
-      return scene;
-    }
-  async function initFunction(){
-    const asyncEngineCreation = async function(){
-        return createDefaultEngine()
-    }
-    engine = await asyncEngineCreation()
-    if(!engine) {
-      return
-    }
-    startRenderLoop(engine,canvas)
-    scene = createScene()
   }
-  initFunction().then(()=>{
-    sceneToRender = scene
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
   })
-  window.addEventListener("resize", function () {
-    engine.resize();
-  });
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
 
 </script>
