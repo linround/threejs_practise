@@ -48,7 +48,7 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 
 
 ## babylonjs和threejs之间的优劣
-- babylonjs 文件比较细致，维护的比较好
+- babylonjs 文件比较细致，维护的比较好，支持ts
 - threejs的例子很多，社区庞大
 
 
