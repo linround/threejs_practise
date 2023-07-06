@@ -71,5 +71,10 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 - 使用gpu挑选
   - 例如在特定区域定义一个特殊的颜色，然后使用gpu获取像素的颜色，最终根据颜色值来判断选中的区域 
 
+## babylon
+- babylonView
+  - [babylonView的使用，](https://doc.babylonjs.com/features/featuresDeepDive/babylonViewer)[基于webComponent的实现](https://www.npmjs.com/package/babylonjs-viewer)
+  - [viewer源码](https://github.com/BabylonJS/Babylon.js/tree/master/packages/tools/viewer)
+
 # 总结
 - 再伟大的艺术大师也不可能仅仅通过按几个按钮或者随便刷几笔就做出惊人的艺术作品来，相反，他们也要经过大量的学习与训练，包括：人体结构，合成，灯光，动画原理等等等等；

@@ -51,12 +51,19 @@
   const createScene =  () => {
       const scene = new BABYLON.Scene(engine);
 
-      const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0));
+      const camera = new BABYLON.ArcRotateCamera(
+        "camera",
+        -Math.PI / 2,
+        Math.PI / 2.5,
+        3,
+        new BABYLON.Vector3(0, 0, 0),
+        scene
+      );
       camera.attachControl(canvas, true);
 
-       new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 5, 0));
+       new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 5, 0),scene);
 
-       BABYLON.MeshBuilder.CreateBox("box", {});
+       BABYLON.MeshBuilder.CreateBox("box", {width:1,height:1,depth:1});
 
       return scene;
     }
