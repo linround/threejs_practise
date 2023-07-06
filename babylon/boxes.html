@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-  <title>methods-for-import</title>
+  <title>boxes</title>
 
   <style>
     html, body {
@@ -33,20 +33,11 @@
   const engine = new BABYLON.Engine(canvas,true)
   const createScene = function (){
     const scene = new BABYLON.Scene(engine)
-    BABYLON.SceneLoader.ImportMeshAsync(null,'./files/','both_houses_scene.babylon').then(result=>{
-      // 可使用name获取mesh，从而修改信息
-      const detachedHouse = scene.getMeshByName('detached_house')
-      detachedHouse.position.y = 2
-      // 可直接访问引用值，并修改信息
-      const semiHouse = result.meshes[2]
-      semiHouse.position.y = 1
-      console.log(result)
-    })
     const camera = new BABYLON.ArcRotateCamera(
             'camera',
             -Math.PI/2,
             Math.PI/2.5,
-            15,
+            10,
             new BABYLON.Vector3(0,0,0)
     )
     camera.attachControl(canvas,true)
@@ -55,6 +46,38 @@
             new BABYLON.Vector3(1,1,0),
             scene
     )
+    // 加载音乐
+    const music = new BABYLON.Sound('cello','https://playground.babylonjs.com/sounds/cellolong.wav',scene,null,{
+      loop:true,
+      autoplay:true
+    })
+
+    const ground = BABYLON.MeshBuilder.CreateGround('ground',{width:10,height:10})
+    const box1 = BABYLON.MeshBuilder.CreateBox('box1',{
+      width:2,height:1.5,depth:3
+    })
+    box1.position.y = .75
+
+    // 逐个缩放
+    const box2 = BABYLON.MeshBuilder.CreateBox('box2',{})
+    box2.scaling.x = 2
+    box2.scaling.y=1.5
+    box2.scaling.z = 3
+    box2.position = new BABYLON.Vector3(-3,0.75,0)
+
+    // 统一缩放
+    const box3 = BABYLON.MeshBuilder.CreateBox('box3',{})
+    box3.scaling = new BABYLON.Vector3(2,1.5,3)
+    box3.position.x = 3
+    box3.position.y = .75
+    box3.position.z = 0
+
+
+    // 进行旋转
+    box1.rotation.y = Math.PI/4
+    // 使用工具设置旋转角度
+    box2.rotation.y = BABYLON.Tools.ToRadians(45)
+
     return scene
 
 
