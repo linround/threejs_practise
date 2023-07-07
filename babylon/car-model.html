@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>car-model</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import earCut from 'earcut'
+  window.earcut = earCut
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      -Math.PI/2,
+      Math.PI/2.5,
+      5,
+      new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+      'light',
+      new BABYLON.Vector3(1,1,0),
+      scene
+    )
+
+
+
+    const car = buildCar()
+    // 构建轮子
+    const wheelRB = BABYLON.MeshBuilder.CreateCylinder('wheelRB',{
+      diameter:0.125,
+      height:0.05
+    })
+    // 设置轮子的父级
+    wheelRB.parent = car
+    wheelRB.position.z = -0.1
+    wheelRB.position.x = -0.2
+    wheelRB.position.y = 0.035
+
+    const wheelRF = wheelRB.clone('wheelRF')
+    wheelRF.position.x = 0.1
+
+    const wheelLB = wheelRB.clone('wheelLB')
+    wheelLB.position.y = -0.2-0.035
+
+    const wheelLF = wheelRF.clone('wheelLF')
+    wheelLF.position.y = -0.2-0.035
+
+
+    return scene
+  }
+  const buildCar = ()=>{
+    // 顶部
+    const outLine = [
+      new  BABYLON.Vector3(-0.3,0,-0.1),
+      new  BABYLON.Vector3(.2,0,-.1)
+    ]
+    // 前面
+    for(let i=0;i<20;i++){
+      outLine.push(
+        new BABYLON.Vector3(
+          0.2 * Math.cos(i * Math.PI / 40),
+          0,
+          0.2 * Math.sin(i * Math.PI / 40)-0.1)
+      )
+    }
+    // 顶部
+    outLine.push(new BABYLON.Vector3(0,0,.1))
+    outLine.push(new BABYLON.Vector3(-0.3,0,.1))
+    const car = BABYLON.MeshBuilder.ExtrudePolygon('car',{
+      shape:outLine,depth:0.2
+    })
+    return car
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
