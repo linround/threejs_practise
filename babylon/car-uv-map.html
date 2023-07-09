@@ -38,7 +38,7 @@
     const camera = new BABYLON.ArcRotateCamera(
             'camera',
             -Math.PI/2,
-            Math.PI/2.5,
+            -Math.PI/1,
             2,
             new BABYLON.Vector3(0,0,0)
     )
@@ -53,16 +53,26 @@
 
     const car = buildCar()
     const {
-      wheelRB
+      wheelRB,
+      wheelRF,
+      wheelLB,
+      wheelLF
     } = buildWheel()
     // 设置轮子的父级
     wheelRB.parent = car
+    wheelRF.parent = car
+    wheelLB.parent = car
+    wheelLF.parent = car
 
 
 
 
 
     scene.beginAnimation(wheelRB,0,30,true)
+    scene.beginAnimation(wheelRF,0,30,true)
+    scene.beginAnimation(wheelLB,0,30,true)
+    scene.beginAnimation(wheelLF,0,30,true)
+    scene.beginAnimation(car,0,150,true)
 
     return scene
   }
@@ -133,11 +143,14 @@
     animWheel.setKeys(wheelKeys)
     // 将设置好的动画添加到轮子中
     wheelRB.animations = [animWheel]
+    wheelRF.animations = [animWheel]
+    wheelLB.animations = [animWheel]
+    wheelLF.animations = [animWheel]
 
 
 
     return {
-      wheelRB,
+      wheelRB,wheelRF,wheelLB,wheelLF
     }
   }
   const buildCar = ()=>{
@@ -178,6 +191,32 @@
       wrap:true
     })
     car.material = carMat
+
+
+
+
+    // 为车体添加动画
+    const animCar = new BABYLON.Animation(
+            'carAnimation',
+            'position.x',
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const carKeys = []
+    carKeys.push({
+      frame:0,
+      value:-4
+    })
+    carKeys.push({
+      frame:150,
+      value:4
+    })
+    animCar.setKeys(carKeys)
+    car.animations = []
+    car.animations.push(animCar)
+
+
     return car
   }
   const scene = createScene()

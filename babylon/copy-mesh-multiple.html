@@ -165,6 +165,51 @@
 
 
 
+    BABYLON.SceneLoader.ImportMeshAsync('','./files/','car.babylon').then(()=>{
+      const car = scene.getMeshByName('car')
+      car.rotation = new BABYLON.Vector3(-Math.PI/2,Math.PI/2,)
+      car.position.y = 0.16
+      car.position.x = 3
+      car.position.z = 7 // 7~-7
+      const animCar = new BABYLON.Animation(
+        'carAnimation',
+        'position.z',
+        30,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      )
+      const carkeys =[]
+      carkeys.push({
+        frame:0,
+        value:7
+      })
+      carkeys.push({
+        frame: 150,
+        value:-7
+      })
+      // 再推一次 是为了设置停留
+      carkeys.push({
+        frame:200,
+        value:-7
+      })
+      animCar.setKeys(carkeys)
+      car.animations = []
+      car.animations.push(animCar)
+      scene.beginAnimation(car,0,200,true)
+
+
+      const wheelRB = scene.getMeshByName('wheelRB')
+      const wheelRF = scene.getMeshByName('wheelRF')
+      const wheelLB = scene.getMeshByName('wheelLB')
+      const wheelLF = scene.getMeshByName('wheelLF')
+      scene.beginAnimation(wheelRB,0,30,true)
+      scene.beginAnimation(wheelRF,0,30,true)
+      scene.beginAnimation(wheelLB,0,30,true)
+      scene.beginAnimation(wheelLF,0,30,true)
+    })
+
+
+
     return scene
   }
   const scene = createScene()

@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babylonjs/loaders": "^6.11.1",
     "babylonjs": "^6.10.0",
     "earcut": "^2.2.4",
     "three": "^0.153.0"
