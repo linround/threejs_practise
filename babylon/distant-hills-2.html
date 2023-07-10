@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>walking-in-village</title>
+  <title>distant-hills</title>
 
-    <style>
-      html, body {
-        overflow: hidden;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
 
-      #renderCanvas {
-        width: 100%;
-        height: 100%;
-        touch-action: none;
-      }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
 
-    </style>
+  </style>
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
@@ -32,24 +32,15 @@
   const canvas = document.getElementById('renderCanvas')
   const engine = new BABYLON.Engine(canvas,true)
 
-  const buildGround = ()=>{
-    // 创建草地的纹理
-    const groundMat = new BABYLON.StandardMaterial('groundMat')
-    groundMat.diffuseColor = new BABYLON.Color3.Green()
-
-    const ground = BABYLON.MeshBuilder.CreateGround('ground',{width:15,height:16})
-    // 在草地上应用该纹理
-    ground.material = groundMat
-  }
   const buildHouse = (width)=>{
     const box = buildBox(width)
     const roof = buildRoof(width)
     return BABYLON.Mesh.MergeMeshes([box,roof],
-      true,
-      false,
-      null,
-      false,
-      true)
+            true,
+            false,
+            null,
+            false,
+            true)
   }
   const buildBox = (width)=>{
 
@@ -100,27 +91,25 @@
     return roof
   }
   const createScene = function (){
+
     const scene = new BABYLON.Scene(engine)
     const camera = new BABYLON.ArcRotateCamera(
-      'camera',
-      -Math.PI/2,
-      Math.PI/2.5,
-      10,
-      new BABYLON.Vector3(0,0,0)
+            'camera',
+            -Math.PI/2,
+            Math.PI/2.5,
+            15,
+            new BABYLON.Vector3(0,0,0)
+    )
+    camera.upperBetaLimit = Math.PI/2.2
+    new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(1,1,0),
+            scene
     )
     camera.attachControl(canvas,true)
-    new BABYLON.HemisphericLight(
-      'light',
-      new BABYLON.Vector3(1,1,0),
-      scene
-    )
 
-    // 加载音乐
-    const music = new BABYLON.Sound('cello','https://playground.babylonjs.com/sounds/cellolong.wav',scene,null,{
-      loop:true,
-      autoplay:true
-    })
-    buildGround()
+
+
     const detachedHouse = buildHouse(1)
     detachedHouse.rotation.y = -Math.PI/16
     detachedHouse.position.x = -6.8
@@ -164,28 +153,30 @@
     }
 
 
-
-    BABYLON.SceneLoader.ImportMeshAsync('','./files/','car.babylon').then(()=>{
+    BABYLON.SceneLoader.ImportMeshAsync(
+            '',
+            './files/',
+            'car.babylon').then(()=>{
       const car = scene.getMeshByName('car')
       car.rotation = new BABYLON.Vector3(-Math.PI/2,Math.PI/2,)
       car.position.y = 0.16
       car.position.x = 3
       car.position.z = 7 // 7~-7
       const animCar = new BABYLON.Animation(
-        'carAnimation',
-        'position.z',
-        30,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+              'carAnimation',
+              'position.z',
+              30,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
       )
       const carkeys =[]
       carkeys.push({
         frame:0,
-        value:7
+        value:10
       })
       carkeys.push({
-        frame: 150,
-        value:-7
+        frame: 200,
+        value:-15
       })
       // 再推一次 是为了设置停留
       carkeys.push({
@@ -210,72 +201,82 @@
 
 
 
-    const walk = function (turn,dist){
-      this.turn = turn
-      this.dist = dist
-    }
-    // 定义人体的轨迹
-    const track = []
-    track.push(new walk(86, 7));
-    track.push(new walk(-85, 14.8));
-    track.push(new walk(-93, 16.5));
-    track.push(new walk(48, 25.5));
-    track.push(new walk(-112, 30.5));
-    track.push(new walk(-72, 33.2));
-    track.push(new walk(42, 37.5));
-    track.push(new walk(-98, 45.2));
-    track.push(new walk(0, 47))
+    // 草地纹理
+    const groundMat = new BABYLON.StandardMaterial('groundMat')
+    groundMat.diffuseTexture = new BABYLON.Texture(
+            './files/texture/villagegreen.png'
+    )
+    groundMat.diffuseTexture.hasAlpha = true
+
+    // 创建草地几何
+    const ground = BABYLON.MeshBuilder.CreateGround(
+            'ground',
+            {
+              width:24,
+              height:24
+            }
+    )
+    ground.material = groundMat
+
+    // 创建草地贴图
+    const largeGroundMat = new BABYLON.StandardMaterial('groundMat')
+    largeGroundMat.diffuseTexture = new BABYLON.Texture(
+            './files/texture/valleygrass.png'
+    )
+
+    const largeGround = BABYLON.MeshBuilder.CreateGroundFromHeightMap(
+            'largeGround',
+            './files/texture/villageheightmap.png',
+            {
+              width:150,
+              height:150,
+              subdivisions:20,
+              minHeight:0,
+              maxHeight:10
+            }
+    )
+    largeGround.material = largeGroundMat
+    largeGround.position.y = -0.01
 
 
 
-    BABYLON.SceneLoader.ImportMeshAsync(
-      'him',
-      './files/',
-      'Dude.babylon',
-      scene
-    ).then(result=>{
-      const dude = result.meshes[0]
-      dude.scaling = new BABYLON.Vector3(0.028,0.028,0.028)
-      dude.position = new BABYLON.Vector3(-6,0,0)
-      dude.rotate(
-        BABYLON.Axis.Y,
-        BABYLON.Tools.ToRadians(-95),
-        BABYLON.Space.LOCAL
-      )
-      const startRotation = dude.rotationQuaternion.clone()
-      scene.beginAnimation(
-        result.skeletons[0],
-        0,
-        100,
-        true,
-        1.0
-      )
-      let distance = 0
-      let step = 0.015
-      let p = 0
-      // 再下一帧的渲染之前执行
-      scene.onBeforeRenderObservable.add(()=>{
-        dude.movePOV(0,0,step)
-        distance+=step
-        if(distance>track[p].dist){
-          dude.rotate(
-            BABYLON.Axis.Y,
-            BABYLON.Tools.ToRadians(track[p].turn),
-            BABYLON.Space.LOCAL
-          )
-          p+=1
-          p%=track.length
-          if(p===0){
-            distance = 0
-            dude.position = new BABYLON.Vector3(-6,0,0)
-            dude.rotationQuaternion = startRotation.clone()
-          }
-        }
-      })
-    })
+    const skybox = BABYLON.MeshBuilder.CreateBox(
+            'skyBox',
+            {
+              size:150
+            },
+            scene
+    )
+    const skyboxMaterial = new BABYLON.StandardMaterial('skyBox',scene)
+    skyboxMaterial.backFaceCulling = false
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+            './files/skybox/skybox',scene)
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0,0,0)
+    skyboxMaterial.specularColor = new BABYLON.Color3(1,1,1)
+    skybox.material = skyboxMaterial
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     return scene
+
+
   }
   const scene = createScene()
   engine.runRenderLoop(function () {

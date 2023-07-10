@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>distant-hills</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            -Math.PI/2,
+            Math.PI/2.5,
+            15,
+            new BABYLON.Vector3(0,0,0)
+    )
+    new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(1,1,0),
+            scene
+    )
+    camera.attachControl(canvas,true)
+
+
+
+
+    // 获取草地纹理
+    const largeGroundMat = new BABYLON.StandardMaterial('largeGroundMat')
+    largeGroundMat.diffuseTexture = new BABYLON.Texture(
+            './files/texture/valleygrass.png'
+    )
+    largeGroundMat.diffuseTexture.hasAlpha = true
+    // 建立高度图
+    const largeGround = BABYLON.MeshBuilder.CreateGroundFromHeightMap(
+            'largeGround',
+            './files/texture/villageheightmap.png',// jpg png 都可以作为高度图
+            {
+              width:150,
+              height:150,
+              subdivisions:20, // 划分的区域越多，图片的边界越清晰
+              minHeight:0,
+              maxHeight:10
+            }
+    )
+    largeGround.material = largeGroundMat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
