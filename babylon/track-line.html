@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>track-line</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            -Math.PI/1.5,
+            Math.PI/5,
+            15,
+            new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(1,1,0),
+            scene
+    )
+
+    const sphere = BABYLON.MeshBuilder.CreateSphere(
+            'sphere',
+            {diameter:0.25}
+    )
+    sphere.position = new BABYLON.Vector3(2,0,2)
+    // 绘制线条
+    const points = []
+    points.push(new BABYLON.Vector3(2,0,2))
+    points.push(new BABYLON.Vector3(2,0,-2))
+    points.push(new BABYLON.Vector3(-2,0,-2))
+    points.push(points[0])
+    BABYLON.MeshBuilder.CreateLines('triangle',{points:points})
+
+
+    // 定义轨迹
+    const slide = function (turn,dist){
+      this.turn = turn
+      this.dist = dist
+    }
+    const track = []
+    track.push(new slide(Math.PI/2,4)) // 该直角处，旋转90°
+    track.push(new slide(3*Math.PI/4,8)) // 第一个锐角，旋转135°
+    track.push(new slide(3*Math.PI/4,8+4*Math.sqrt(2))) // 第二个锐角 旋转135°
+
+
+    let distance = 0
+    let step = 0.025
+    let p = 0
+    scene.onBeforeRenderObservable.add(()=>{
+      sphere.movePOV(
+              0, // right z
+              0, // up y
+              step // front x
+      )
+      distance+=step
+      if(distance>track[p].dist){
+        sphere.rotate(
+                BABYLON.Axis.Y,
+                track[p].turn,
+                BABYLON.Space.LOCAL
+        )
+        p+=1
+        p%=track.length
+        if(p===0){
+          distance = 0
+          sphere.position = new BABYLON.Vector3(2,0,2)
+          sphere.rotation = BABYLON.Vector3.Zero()
+        }
+      }
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
