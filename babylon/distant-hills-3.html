@@ -28,6 +28,7 @@
 </body>
 </html>
 <script type="module">
+  import * as GUI from  'babylonjs-gui'
   import * as BABYLON from 'babylonjs'
   const canvas = document.getElementById('renderCanvas')
   const engine = new BABYLON.Engine(canvas,true)
@@ -101,6 +102,14 @@
       new BABYLON.Vector3(0,0,0)
     )
     camera.upperBetaLimit = Math.PI/2.2
+    // const dir01 = new BABYLON.DirectionalLight(
+    //   'dir01',
+    //   new BABYLON.Vector3(0,-1,1),
+    //   scene
+    // )
+
+
+
     const light = new BABYLON.HemisphericLight(
       'light',
       new BABYLON.Vector3(1,1,0),
@@ -109,6 +118,10 @@
     // 将半球光的强度降低
     light.intensity = 0.5
     camera.attachControl(canvas,true)
+
+
+
+
 
 
 
@@ -219,6 +232,7 @@
       }
     )
     ground.material = groundMat
+    ground.receiveShadows = true
 
     // 创建草地贴图
     const largeGroundMat = new BABYLON.StandardMaterial('groundMat')
@@ -450,7 +464,7 @@
         0
         ))
     }
-    lampPath.push(new BABYLON.Vector3(5,lampHeight,0))
+    lampPath.push(new BABYLON.Vector3(0,lampHeight,0))
 
     // 灯管
     const lamp = BABYLON.MeshBuilder.ExtrudeShape('lamp',{
@@ -510,10 +524,67 @@
     lamp2.position.z = 0.8
     lamp2.rotation.y = -Math.PI/2
 
+    buildLightControl(light)
+    buildShadow(scene,lamp)
+
 
     return scene
 
 
+  }
+  const buildShadow = (scene,lamp)=>{
+
+    // 添加阴影
+    const light = new BABYLON.DirectionalLight(
+      'light',
+      new BABYLON.Vector3(0,-1,1),
+      scene
+    );
+    light.position = new BABYLON.Vector3(-2,10,-2);
+
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024,light);
+    BABYLON.SceneLoader.ImportMesh('','./files/','Dude.babylon',scene,
+      function(newMeshes2,particleSystems2,skeletons2){
+        console.log(skeletons2)
+        const dude = newMeshes2[0]
+        dude.scaling = new BABYLON.Vector3(0.2,0.2,0.2)
+        shadowGenerator.addShadowCaster(dude,true)
+        scene.beginAnimation(skeletons2[0],0,100,true)
+      })
+
+  }
+  const buildLightControl = light=>{
+
+
+    // 添加一个控制器
+    const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI')
+    const panel = new GUI.StackPanel()
+    panel.width = '220px'
+    panel.top = '-25px'
+    panel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT
+    panel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM
+    adt.addControl(panel)
+
+
+    const header = new GUI.TextBlock()
+    header.text = 'night to day'
+    header.height = '30px'
+    header.color = 'white'
+    panel.addControl(header)
+
+    const slider = new GUI.Slider()
+    slider.minimum = 0
+    slider.maximum = 1
+    slider.borderColor = 'black'
+    slider.color = 'gray'
+    slider.value = 1
+    slider.height = '20px'
+    slider.width = '200px'
+    slider.onValueChangedObservable.add(value=>{
+      if(!light) return
+      light.intensity = value
+    })
+    panel.addControl(slider)
   }
   const scene = createScene()
   engine.runRenderLoop(function () {

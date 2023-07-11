@@ -12,7 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@babylonjs/loaders": "^6.11.1",
-    "babylonjs": "^6.10.0",
+    "babylonjs": "^6.11.2",
+    "babylonjs-gui": "^6.11.2",
     "earcut": "^2.2.4",
     "three": "^0.153.0"
   },
