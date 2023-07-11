@@ -97,7 +97,7 @@
       'camera',
       -Math.PI/2,
       Math.PI/2.5,
-      15,
+      50,
       new BABYLON.Vector3(0,0,0)
     )
     camera.upperBetaLimit = Math.PI/2.2
@@ -425,6 +425,65 @@
 
 
     // 构建路灯
+
+    // 构建形状
+    // 灯泡
+    const lampHeight = 1
+    const lampShape = []
+    for (let i=0;i<20;i++){
+      lampShape.push(new BABYLON.Vector3(
+        Math.cos(i*Math.PI/10)/10,
+        Math.sin(i*Math.PI/10)/10,
+        0
+      ))
+    }
+    lampShape.push(lampShape[0])
+    // 扩展路径
+    // 灯管形状
+    const lampPath = []
+    lampPath.push(new BABYLON.Vector3(0,0,0))
+    lampPath.push(new BABYLON.Vector3(0,lampHeight,0))
+    for(let i =0;i<20;i++){
+      lampPath.push(new BABYLON.Vector3(
+        1-Math.cos(i*Math.PI/40),
+        lampHeight+Math.sin(i*Math.PI/40),
+        0
+        ))
+    }
+    lampPath.push(new BABYLON.Vector3(5,lampHeight,0))
+
+    // 灯管
+    const lamp = BABYLON.MeshBuilder.ExtrudeShape('lamp',{
+      cap:BABYLON.Mesh.CAP_END,
+      shape:lampShape,
+      path:lampPath, // 竖直灯管
+      scale:0.5
+    })
+    lamp.position = new BABYLON.Vector3(2,0,2)
+    lamp.rotation = BABYLON.Vector3.Zero()
+    lamp.rotation.y = -Math.PI/4
+
+
+    // 灯泡
+    const bulb = BABYLON.MeshBuilder.CreateSphere(
+      'bulb',
+      {
+        diameterX:0.15,
+        diameterZ:0.15
+      }
+    )
+    // 设置发光材质
+    const yellowMat = new BABYLON.StandardMaterial('yellowMat')
+    yellowMat.emissiveColor = BABYLON.Color3.Yellow() // 设置发光属性
+    // 将发光材质应用在灯泡上
+    bulb.material = yellowMat
+    // 灯泡的父属性是灯管
+    bulb.parent = lamp
+    bulb.position.x = 1
+    bulb.position.y = lampHeight+0.5
+
+
+    // 设置灯光效果
     const lampLight = new BABYLON.SpotLight(
       'lampLight',
       BABYLON.Vector3.Zero(), // 位置
@@ -433,59 +492,23 @@
       0.5,// 照射强度
       scene
     )
-    lampLight.diffuse = BABYLON.Color3.Yellow()
-
-    // 构建形状
-    const lampShape = []
-    for (let i=0;i<20;i++){
-      lampShape.push(new BABYLON.Vector3(
-        Math.cos(i*Math.PI/10),
-        Math.sin(i*Math.PI/10),
-        0
-      ))
-    }
-    lampShape.push(lampShape[0])
-    // 扩展路径
-    const lampPath = []
-    lampPath.push(new BABYLON.Vector3(0,0,0))
-    lampPath.push(new BABYLON.Vector3(0,10,0))
-    for(let i =0;i<20;i++){
-      lampPath.push(new BABYLON.Vector3(
-        1+Math.cos(Math.PI-i*Math.PI/40),
-        10+Math.sin(Math.PI-i*Math.PI/40),
-        0
-        ))
-    }
-    lampPath.push(new BABYLON.Vector3(3,11,0))
-    const yellowMat = new BABYLON.StandardMaterial('yellowMat')
-    yellowMat.emissiveColor = BABYLON.Color3.Yellow() // 设置发光属性
-
-    // 灯管
-    const lamp = BABYLON.MeshBuilder.ExtrudeShape('lamp',{
-      cap:BABYLON.Mesh.CAP_END,
-      shape:lampShape,
-      path:lampPath,
-      scale:0.5
-    })
-    // 灯泡
-    const bulb = BABYLON.MeshBuilder.CreateSphere(
-      'bulb',
-      {
-        diameterX:1.5,
-        diameterZ:0.8
-      }
-    )
-    bulb.material = yellowMat
-    bulb.parent = lamp
-    bulb.position.x = 2
-    bulb.position.y = 10.5
-
     // 将点光源添加在灯泡上
     lampLight.parent = bulb
 
 
 
 
+    const lamp3 = lamp.clone('lamp3')
+    lamp3.position.z = -8
+    const lamp1 = lamp.clone('lamp1')
+    lamp1.position.x = -8
+    lamp1.position.z = 1.2
+    lamp1.rotation.y = Math.PI/2
+
+    const lamp2 = lamp1.clone('lamp2')
+    lamp2.position.x = -2.7
+    lamp2.position.z = 0.8
+    lamp2.rotation.y = -Math.PI/2
 
 
     return scene
