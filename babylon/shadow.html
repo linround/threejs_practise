@@ -49,6 +49,8 @@
     // 将半球光的强度降低
     light.intensity = 0.5
 
+
+
     const lampHeight = 10
     const lampShape = []
     for (let i=0;i<20;i++){
@@ -89,13 +91,12 @@
     groundMat.diffuseTexture = new BABYLON.Texture(
             './files/texture/villagegreen.png'
     )
-    const ground = BABYLON.Mesh.CreateGround(
+    const ground = BABYLON.MeshBuilder.CreateGround(
             'ground',
-            100,
-            100,
-            1,
-            scene,
-            false
+            {
+              width:100,
+              height:100
+            }
     );
 
     ground.material = groundMat
@@ -150,6 +151,7 @@
             function(newMeshes2,particleSystems2,skeletons2){
               const dude = newMeshes2[0]
               dude.scaling = new BABYLON.Vector3(0.2,0.2,0.2)
+
                       dude.position = new BABYLON.Vector3(-3,0,-3)
               shadowGenerator.addShadowCaster(dude,true)
               shadowGenerator.addShadowCaster(lamp,true)
