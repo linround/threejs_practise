@@ -334,6 +334,59 @@
     fountain.position.x = -4
     fountain.position.z = -6
 
+    // 创建一个粒子系统
+    const particleSystem = new BABYLON.ParticleSystem(
+      'particles',
+      5000,// 粒子数
+      scene
+    )
+    // 设置每一个粒子的纹理
+    particleSystem.particleTexture = new BABYLON.Texture(
+      './files/texture/flare.png',
+      scene
+    )
+    // 设置例子发射器
+    particleSystem.emitter = new BABYLON.Vector3(-4,.8,-6)
+    particleSystem.minEmitBox = new BABYLON.Vector3(-0.01,0,-0.01)
+    particleSystem.maxEmitBox = new BABYLON.Vector3(0.01,0,0.01)
+
+    // 设置粒子的颜色
+    particleSystem.color1 = new BABYLON.Color4(0.7,0.8,1,1)
+    particleSystem.color2 = new BABYLON.Color4(0.2,0.5,1,1)
+    particleSystem.colorDead = new BABYLON.Color4(0,0,0.2,1)
+
+
+    // 设置每一个粒子的大小
+    particleSystem.minSize = 0.01
+    particleSystem.maxSize = 0.05
+
+    // 设置粒子的存在周期
+    particleSystem.minLifeTime = 0.5
+    particleSystem.maxLifeTime = 1
+
+    // 设置粒子的发射频率 每秒发射的粒子数
+    particleSystem.emitRate = 4000
+
+    // 颜色混合模式
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE
+    // 设置重力方向
+    particleSystem.gravity = new BABYLON.Vector3(0,-9.81,0)
+    // 粒子的方向
+    particleSystem.direction1 = new BABYLON.Vector3(-1,8,1)
+    particleSystem.direction2 = new BABYLON.Vector3(1,8,-1)
+
+    //
+    particleSystem.minAngularSpeed = 0
+    particleSystem.maxAngularSpeed = Math.PI
+
+    // 设置发射速度
+    particleSystem.minEmitPower = 0.1
+    particleSystem.maxEmitPower = 0.3 //发射速度和重力因子共同来决定了发色的高度
+    particleSystem.updateSpeed = 0.01 // 这个会影响粒子系统每一帧的更新速度
+
+    particleSystem.start()
+
+
 
 
 
