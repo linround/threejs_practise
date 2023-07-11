@@ -101,11 +101,13 @@
       new BABYLON.Vector3(0,0,0)
     )
     camera.upperBetaLimit = Math.PI/2.2
-    new BABYLON.HemisphericLight(
+    const light = new BABYLON.HemisphericLight(
       'light',
       new BABYLON.Vector3(1,1,0),
       scene
     )
+    // 将半球光的强度降低
+    light.intensity = 0.5
     camera.attachControl(canvas,true)
 
 
@@ -391,7 +393,95 @@
 
 
 
+    let switched = false
+    const pointerDown = mesh=>{
+      if(mesh=== fountain) {
+        switched = !switched
+        if(switched) {
+          particleSystem.stop()
+          return
+        }
+        particleSystem.start()
+      }
+    }
+    // 添加一个控制事件，从而控制粒子的发射和暂停
+    scene.onPointerObservable.add(pointerInfo =>{
+      switch (pointerInfo.type){
+        case BABYLON.PointerEventTypes.POINTERDOWN:{
+          if(pointerInfo.pickInfo.hit) {
+            pointerDown(pointerInfo.pickInfo.pickedMesh)
+          }
+        }
+      }
+    })
 
+
+
+
+
+
+
+
+
+
+    // 构建路灯
+    const lampLight = new BABYLON.SpotLight(
+      'lampLight',
+      BABYLON.Vector3.Zero(), // 位置
+      new BABYLON.Vector3(0,-1,0),// 方向
+      Math.PI,// 角度
+      0.5,// 照射强度
+      scene
+    )
+    lampLight.diffuse = BABYLON.Color3.Yellow()
+
+    // 构建形状
+    const lampShape = []
+    for (let i=0;i<20;i++){
+      lampShape.push(new BABYLON.Vector3(
+        Math.cos(i*Math.PI/10),
+        Math.sin(i*Math.PI/10),
+        0
+      ))
+    }
+    lampShape.push(lampShape[0])
+    // 扩展路径
+    const lampPath = []
+    lampPath.push(new BABYLON.Vector3(0,0,0))
+    lampPath.push(new BABYLON.Vector3(0,10,0))
+    for(let i =0;i<20;i++){
+      lampPath.push(new BABYLON.Vector3(
+        1+Math.cos(Math.PI-i*Math.PI/40),
+        10+Math.sin(Math.PI-i*Math.PI/40),
+        0
+        ))
+    }
+    lampPath.push(new BABYLON.Vector3(3,11,0))
+    const yellowMat = new BABYLON.StandardMaterial('yellowMat')
+    yellowMat.emissiveColor = BABYLON.Color3.Yellow() // 设置发光属性
+
+    // 灯管
+    const lamp = BABYLON.MeshBuilder.ExtrudeShape('lamp',{
+      cap:BABYLON.Mesh.CAP_END,
+      shape:lampShape,
+      path:lampPath,
+      scale:0.5
+    })
+    // 灯泡
+    const bulb = BABYLON.MeshBuilder.CreateSphere(
+      'bulb',
+      {
+        diameterX:1.5,
+        diameterZ:0.8
+      }
+    )
+    bulb.material = yellowMat
+    bulb.parent = lamp
+    bulb.position.x = 2
+    bulb.position.y = 10.5
+
+    // 将点光源添加在灯泡上
+    lampLight.parent = bulb
 
 
 
