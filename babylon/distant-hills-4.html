@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>distant-hills-4</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as GUI from  'babylonjs-gui'
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+
+  const buildHouse = (width)=>{
+    const box = buildBox(width)
+    const roof = buildRoof(width)
+    return BABYLON.Mesh.MergeMeshes([box,roof],
+            true,
+            false,
+            null,
+            false,
+            true)
+  }
+  const buildBox = (width)=>{
+
+    // 盒子的纹理
+    const boxMat = new BABYLON.StandardMaterial('boxMat')
+    if(width===2){
+      boxMat.diffuseTexture = new BABYLON.Texture('./files/texture/semihouse.png')
+    } else {
+      boxMat.diffuseTexture = new BABYLON.Texture('./files/texture/cubehouse.png')
+    }
+
+    const faceUV = []
+    if(width===2){
+      faceUV[0] = new BABYLON.Vector4(0.6,0,1,1) // 后
+      faceUV[1] = new BABYLON.Vector4(0,0,.4,1) // 前
+      faceUV[2] = new BABYLON.Vector4(.4,0,.6,1)// 右
+      faceUV[3] = new BABYLON.Vector4(.4,0,.6,1)// 左
+    } else {
+      faceUV[0] = new BABYLON.Vector4(0.5,0,.75,1) // 后
+      faceUV[1] = new BABYLON.Vector4(0,0,.25,1) // 前
+      faceUV[2] = new BABYLON.Vector4(.25,0,.5,1)// 右
+      faceUV[3] = new BABYLON.Vector4(.75,0,1,1)// 左
+    }
+    const box = BABYLON.MeshBuilder.CreateBox('box',{
+      faceUV:faceUV,
+      wrap:true,
+      width
+    })
+    box.position.y = .5
+    box.material = boxMat
+    return box
+  }
+  const buildRoof = (width)=>{
+// 房顶的纹理
+    const roofMat = new BABYLON.StandardMaterial('roofMat')
+    roofMat.diffuseTexture = new BABYLON.Texture('./files/texture/roof.jpg')
+
+    const roof = BABYLON.MeshBuilder.CreateCylinder('roof',{
+      diameter:1.3,
+      height:1.2,
+      tessellation:3 // 三个面就变成了三棱柱，50面就变成了棱柱
+    })
+    roof.position.y = 1.22
+    roof.rotation.z = Math.PI/2
+    roof.scaling.x = .75
+    roof.scaling.y = width
+    roof.material = roofMat
+    return roof
+  }
+  const createScene = function (){
+
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            Math.PI/2, //alpha
+            Math.PI/2.5,// beta
+            150,// radius
+            new BABYLON.Vector3(0,75,0) // target
+    )
+    camera.upperBetaLimit = Math.PI/2.2
+    // const dir01 = new BABYLON.DirectionalLight(
+    //   'dir01',
+    //   new BABYLON.Vector3(0,-1,1),
+    //   scene
+    // )
+
+
+
+    const light = new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(1,1,0),
+            scene
+    )
+    // 将半球光的强度降低
+    light.intensity = 0.5
+    camera.attachControl(canvas,true)
+
+
+
+
+
+
+
+    const detachedHouse = buildHouse(1)
+    detachedHouse.rotation.y = -Math.PI/16
+    detachedHouse.position.x = -6.8
+    detachedHouse.position.z = 2.5
+
+
+    const semiHouse = buildHouse(2)
+    semiHouse.rotation.y = -Math.PI/16
+    semiHouse.position.x = -4.5
+    semiHouse.position.z = 3
+
+    const places = []
+    places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
+    places.push([2, -Math.PI / 16, -4.5, 3 ]);
+    places.push([2, -Math.PI / 16, -1.5, 4 ]);
+    places.push([2, -Math.PI / 3, 1.5, 6 ]);
+    places.push([2, 15 * Math.PI / 16, -6.4, -1.5 ]);
+    places.push([1, 15 * Math.PI / 16, -4.1, -1 ]);
+    places.push([2, 15 * Math.PI / 16, -2.1, -0.5 ]);
+    places.push([1, 5 * Math.PI / 4, 0, -1 ]);
+    places.push([1, Math.PI + Math.PI / 2.5, 0.5, -3 ]);
+    places.push([2, Math.PI + Math.PI / 2.1, 0.75, -5 ]);
+    places.push([1, Math.PI + Math.PI / 2.25, 0.75, -7 ]);
+    places.push([2, Math.PI / 1.9, 4.75, -1 ]);
+    places.push([1, Math.PI / 1.95, 4.5, -3 ]);
+    places.push([2, Math.PI / 1.9, 4.75, -5 ]);
+    places.push([1, Math.PI / 1.9, 4.75, -7 ]);
+    places.push([2, -Math.PI / 3, 5.25, 2 ]);
+    places.push([1, -Math.PI / 3, 6, 4 ]);
+
+    const houses = []
+    for (let i=0;i<places.length;i++) {
+      if(places[i][0]===1) {
+        houses[i] = detachedHouse.createInstance('house'+i)
+      } else {
+        houses[i] = semiHouse.createInstance('house'+i)
+      }
+      houses[i].rotation.y = places[i][1]
+      houses[i].position.x = places[i][2]
+      houses[i].position.z = places[i][3]
+    }
+
+
+    BABYLON.SceneLoader.ImportMeshAsync(
+            '',
+            './files/',
+            'car.babylon').then(()=>{
+      const car = scene.getMeshByName('car')
+      car.rotation = new BABYLON.Vector3(-Math.PI/2,Math.PI/2,)
+      car.position.y = 0.16
+      car.position.x = 3
+      car.position.z = 7 // 7~-7
+      const animCar = new BABYLON.Animation(
+              'carAnimation',
+              'position.z',
+              30,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      )
+      const carkeys =[]
+      carkeys.push({
+        frame:0,
+        value:10
+      })
+      carkeys.push({
+        frame: 200,
+        value:-15
+      })
+      // 再推一次 是为了设置停留
+      carkeys.push({
+        frame:200,
+        value:-7
+      })
+      animCar.setKeys(carkeys)
+      car.animations = []
+      car.animations.push(animCar)
+      scene.beginAnimation(car,0,200,true)
+
+
+      const wheelRB = scene.getMeshByName('wheelRB')
+      const wheelRF = scene.getMeshByName('wheelRF')
+      const wheelLB = scene.getMeshByName('wheelLB')
+      const wheelLF = scene.getMeshByName('wheelLF')
+      scene.beginAnimation(wheelRB,0,30,true)
+      scene.beginAnimation(wheelRF,0,30,true)
+      scene.beginAnimation(wheelLB,0,30,true)
+      scene.beginAnimation(wheelLF,0,30,true)
+    })
+
+
+
+    // 草地纹理
+    const groundMat = new BABYLON.StandardMaterial('groundMat')
+    groundMat.diffuseTexture = new BABYLON.Texture(
+            './files/texture/villagegreen.png'
+    )
+    groundMat.diffuseTexture.hasAlpha = true
+
+    // 创建草地几何
+    const ground = BABYLON.MeshBuilder.CreateGround(
+            'ground',
+            {
+              width:24,
+              height:24
+            }
+    )
+    ground.material = groundMat
+    ground.receiveShadows = true;
+
+
+    // 创建草地贴图
+    const largeGroundMat = new BABYLON.StandardMaterial('groundMat')
+    largeGroundMat.diffuseTexture = new BABYLON.Texture(
+            './files/texture/valleygrass.png'
+    )
+
+    const largeGround = BABYLON.MeshBuilder.CreateGroundFromHeightMap(
+            'largeGround',
+            './files/texture/villageheightmap.png',
+            {
+              width:150,
+              height:150,
+              subdivisions:20,
+              minHeight:0,
+              maxHeight:10
+            }
+    )
+    largeGround.material = largeGroundMat
+    largeGround.position.y = -0.01
+
+
+
+    const skybox = BABYLON.MeshBuilder.CreateBox(
+            'skyBox',
+            {
+              size:150
+            },
+            scene
+    )
+    const skyboxMaterial = new BABYLON.StandardMaterial('skyBox',scene)
+    skyboxMaterial.backFaceCulling = false
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+            './files/skybox/skybox',scene)
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0,0,0)
+    skyboxMaterial.specularColor = new BABYLON.Color3(1,1,1)
+    skybox.material = skyboxMaterial
+
+
+
+    // 绘制树木
+    const spriteManagerTrees = new BABYLON.SpriteManager(
+            'treesManager',
+            './files/texture/palm.png',
+            1000, // 这个管理器可以管理1000个精灵
+            {
+              width:512, //对应了图片的尺寸
+              height:1024
+            },
+            scene
+    )
+    // 在随机位置创建树
+    for(let i=0;i<500;i++){
+      const tree = new BABYLON.Sprite('tree',spriteManagerTrees)
+      tree.position.x = Math.random()*(-30)
+      tree.position.z = Math.random()*20+8
+      tree.position.y = 0.5
+    }
+    for(let i=0;i<500;i++){
+      const tree = new BABYLON.Sprite('tree',spriteManagerTrees)
+      tree.position.x = Math.random()*25+7
+      tree.position.z = Math.random()*(-35)+8
+      tree.position.y = 0.5
+    }
+
+
+
+    // 添加一个ufo动画
+    const spriteManagerUFO = new BABYLON.SpriteManager(
+            'UFOManager',
+            './files/texture/ufo.png',
+            1, // 容量
+            { // 单元格size
+              width:640/5,//
+              height:304/4
+            }
+    )
+    const ufo = new BABYLON.Sprite('ufo',spriteManagerUFO)
+    ufo.playAnimation(
+            0,
+            17,
+            true,
+            100
+    )
+    ufo.position.y = 5
+    ufo.position.z = 0
+    ufo.position.x = 0
+    ufo.width = 2
+    ufo.height = 1
+
+
+
+
+    // 添加一个喷泉
+    const fountainProfile = [
+      new BABYLON.Vector3(0, 0, 0),
+      new BABYLON.Vector3(0.5, 0, 0),
+      new BABYLON.Vector3(0.5, 0.2, 0),
+      new BABYLON.Vector3(0.4, 0.2, 0),
+      new BABYLON.Vector3(0.4, 0.05, 0),
+      new BABYLON.Vector3(0.05, 0.1, 0),
+      new BABYLON.Vector3(0.05, 0.8, 0),
+      new BABYLON.Vector3(0.15, 0.9, 0)
+    ]
+    // 创建这个车床
+    const fountain = BABYLON.MeshBuilder.CreateLathe(
+            'fountain',
+            {
+              shape:fountainProfile,
+              sideOrientation:BABYLON.Mesh.DOUBLESIDE
+            },
+            scene
+    )
+    fountain.position.x = -4
+    fountain.position.z = -6
+
+    // 创建一个粒子系统
+    const particleSystem = new BABYLON.ParticleSystem(
+            'particles',
+            5000,// 粒子数
+            scene
+    )
+    // 设置每一个粒子的纹理
+    particleSystem.particleTexture = new BABYLON.Texture(
+            './files/texture/flare.png',
+            scene
+    )
+    // 设置例子发射器
+    particleSystem.emitter = new BABYLON.Vector3(-4,.8,-6)
+    particleSystem.minEmitBox = new BABYLON.Vector3(-0.01,0,-0.01)
+    particleSystem.maxEmitBox = new BABYLON.Vector3(0.01,0,0.01)
+
+    // 设置粒子的颜色
+    particleSystem.color1 = new BABYLON.Color4(0.7,0.8,1,1)
+    particleSystem.color2 = new BABYLON.Color4(0.2,0.5,1,1)
+    particleSystem.colorDead = new BABYLON.Color4(0,0,0.2,1)
+
+
+    // 设置每一个粒子的大小
+    particleSystem.minSize = 0.01
+    particleSystem.maxSize = 0.05
+
+    // 设置粒子的存在周期
+    particleSystem.minLifeTime = 0.5
+    particleSystem.maxLifeTime = 1
+
+    // 设置粒子的发射频率 每秒发射的粒子数
+    particleSystem.emitRate = 4000
+
+    // 颜色混合模式
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE
+    // 设置重力方向
+    particleSystem.gravity = new BABYLON.Vector3(0,-9.81,0)
+    // 粒子的方向
+    particleSystem.direction1 = new BABYLON.Vector3(-1,8,1)
+    particleSystem.direction2 = new BABYLON.Vector3(1,8,-1)
+
+    //
+    particleSystem.minAngularSpeed = 0
+    particleSystem.maxAngularSpeed = Math.PI
+
+    // 设置发射速度
+    particleSystem.minEmitPower = 0.1
+    particleSystem.maxEmitPower = 0.3 //发射速度和重力因子共同来决定了发色的高度
+    particleSystem.updateSpeed = 0.01 // 这个会影响粒子系统每一帧的更新速度
+
+    particleSystem.start()
+
+
+
+
+
+
+    let switched = false
+    const pointerDown = mesh=>{
+      if(mesh=== fountain) {
+        switched = !switched
+        if(switched) {
+          particleSystem.stop()
+          return
+        }
+        particleSystem.start()
+      }
+    }
+    // 添加一个控制事件，从而控制粒子的发射和暂停
+    scene.onPointerObservable.add(pointerInfo =>{
+      switch (pointerInfo.type){
+        case BABYLON.PointerEventTypes.POINTERDOWN:{
+          if(pointerInfo.pickInfo.hit) {
+            pointerDown(pointerInfo.pickInfo.pickedMesh)
+          }
+        }
+      }
+    })
+
+
+
+
+
+
+
+
+
+
+    // 构建路灯
+
+    // 构建形状
+    // 灯泡
+    const lampHeight = 1
+    const lampShape = []
+    for (let i=0;i<20;i++){
+      lampShape.push(new BABYLON.Vector3(
+              Math.cos(i*Math.PI/10)/10,
+              Math.sin(i*Math.PI/10)/10,
+              0
+      ))
+    }
+    lampShape.push(lampShape[0])
+    // 扩展路径
+    // 灯管形状
+    const lampPath = []
+    lampPath.push(new BABYLON.Vector3(0,0,0))
+    lampPath.push(new BABYLON.Vector3(0,lampHeight,0))
+    for(let i =0;i<20;i++){
+      lampPath.push(new BABYLON.Vector3(
+              1-Math.cos(i*Math.PI/40),
+              lampHeight+Math.sin(i*Math.PI/40),
+              0
+      ))
+    }
+    lampPath.push(new BABYLON.Vector3(0,lampHeight,0))
+    // 灯管
+    const lamp = BABYLON.MeshBuilder.ExtrudeShape('lamp',{
+      cap:BABYLON.Mesh.CAP_END,
+      shape:lampShape,
+      path:lampPath, // 竖直灯管
+      scale:0.5
+    })
+    lamp.position = new BABYLON.Vector3(2,0,2)
+    lamp.rotation = BABYLON.Vector3.Zero()
+    lamp.rotation.y = -Math.PI/4
+
+
+    // 灯泡
+    const bulb = BABYLON.MeshBuilder.CreateSphere(
+            'bulb',
+            {
+              diameterX:0.15,
+              diameterZ:0.15
+            }
+    )
+    // 设置发光材质
+    const yellowMat = new BABYLON.StandardMaterial('yellowMat')
+    yellowMat.emissiveColor = BABYLON.Color3.Yellow() // 设置发光属性
+    // 将发光材质应用在灯泡上
+    bulb.material = yellowMat
+    // 灯泡的父属性是灯管
+    bulb.parent = lamp
+    bulb.position.x = 1
+    bulb.position.y = lampHeight+0.5
+
+
+    // 设置灯光效果
+    const lampLight = new BABYLON.SpotLight(
+            'lampLight',
+            BABYLON.Vector3.Zero(), // 位置
+            new BABYLON.Vector3(0,-1,0),// 方向
+            Math.PI,// 角度
+            0.5,// 照射强度
+            scene
+    )
+    // 将点光源添加在灯泡上
+    lampLight.parent = bulb
+
+
+
+
+
+    const lamp3 = lamp.clone('lamp3')
+    lamp3.position.z = -8
+    buildShadow(scene,camera)
+    const lamp1 = lamp.clone('lamp1')
+    lamp1.position.x = -8
+    lamp1.position.z = 1.2
+    lamp1.rotation.y = Math.PI/2
+
+
+    const lamp2 = lamp1.clone('lamp2')
+    lamp2.position.x = -2.7
+    lamp2.position.z = 0.8
+    lamp2.rotation.y = -Math.PI/2
+    buildLightControl(light)
+
+    return scene
+
+
+  }
+  const buildShadow = (scene,camera)=>{
+    // 添加阴影
+    const light = new BABYLON.DirectionalLight(
+            'light',
+            new BABYLON.Vector3(0,-1,1),
+            scene
+    );
+    light.position = new BABYLON.Vector3(0,50,-100);
+
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024,light);
+    const walk = function (turn, dist) {
+      this.turn = turn;
+      this.dist = dist;
+    }
+    const track = []
+    track.push(new walk(86, 7));
+    track.push(new walk(-85, 14.8));
+    track.push(new walk(-93, 16.5));
+    track.push(new walk(48, 25.5));
+    track.push(new walk(-112, 30.5));
+    track.push(new walk(-72, 33.2));
+    track.push(new walk(42, 37.5));
+    track.push(new walk(-98, 45.2));
+    track.push(new walk(0, 47))
+
+
+
+    BABYLON.SceneLoader.ImportMeshAsync(
+            '',
+            './files/',
+            'Dude.babylon',
+            scene
+    ).then(result=>{
+
+      const dude = result.meshes[0]
+      camera.parent = dude
+      dude.scaling = new BABYLON.Vector3(0.008,0.008,0.008)
+      shadowGenerator.addShadowCaster(dude,true)
+      dude.position = new BABYLON.Vector3(-6,0,0)
+      dude.rotate(
+              BABYLON.Axis.Y,
+              BABYLON.Tools.ToRadians(-95),
+              BABYLON.Space.LOCAL
+      )
+      const startRotation = dude.rotationQuaternion.clone()
+      scene.beginAnimation(
+              result.skeletons[0],
+              0,
+              100,
+              true,
+              1
+      )
+
+      let distance = 0
+      let step = 0.01
+      let p =0
+      scene.onBeforeCameraRenderObservable.add(()=>{
+        dude.movePOV(0,0,step)
+        distance+=step
+        if(distance>track[p].dist){
+          dude.rotate(
+                  BABYLON.Axis.Y,
+                  BABYLON.Tools.ToRadians(track[p].turn),
+                  BABYLON.Space.LOCAL
+          )
+          p+=1
+          p%=track.length
+          if(p===0){
+            distance = 0
+            dude.position = new BABYLON.Vector3(-6,0,0)
+            dude.rotationQuaternion = startRotation.clone()
+          }
+        }
+      })
+
+
+    })
+
+  }
+  const buildLightControl = light=>{
+
+
+    // 添加一个控制器
+    const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI')
+    const panel = new GUI.StackPanel()
+    panel.width = '220px'
+    panel.top = '-25px'
+    panel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT
+    panel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM
+    adt.addControl(panel)
+
+
+    const header = new GUI.TextBlock()
+    header.text = 'night to day'
+    header.height = '30px'
+    header.color = 'white'
+    panel.addControl(header)
+
+    const slider = new GUI.Slider()
+    slider.minimum = 0
+    slider.maximum = 1
+    slider.borderColor = 'black'
+    slider.color = 'gray'
+    slider.value = 1
+    slider.height = '20px'
+    slider.width = '200px'
+    slider.onValueChangedObservable.add(value=>{
+      if(!light) return
+      light.intensity = value
+    })
+    panel.addControl(slider)
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
