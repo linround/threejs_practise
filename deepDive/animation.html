@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>animation</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    BABYLON.SceneLoader.ImportMeshAsync('','./files/','box.babylon')
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      -Math.PI/2,
+      Math.PI/4,
+      10,
+      new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    const light1 = new BABYLON.DirectionalLight(
+      'DirectionalLight',
+      new BABYLON.Vector3(1,1,0),
+      scene
+    )
+    const light2 = new BABYLON.HemisphericLight(
+      'HemisphericLight',
+      new BABYLON.Vector3(0,1,0),
+      scene
+    )
+    light1.intensity = 0.75
+    light2.intensity = 0.5
+
+
+    const box = BABYLON.MeshBuilder.CreateBox(
+      'box',
+      {}
+    )
+    box.position.x = 2
+    const frameRate = 10
+    const xSlide = new BABYLON.Animation(
+      'xSlide',
+      'position.x',
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+
+    const keyFrames = []
+    // 初始帧
+    keyFrames.push({
+      frame:0,
+      value:2
+    })
+    keyFrames.push({
+      frame:frameRate,
+      value:-2
+    })
+    keyFrames.push({
+      frame:2*frameRate,
+      value:2
+    })
+    // 动画设置关键帧
+    xSlide.setKeys(keyFrames)
+    // 在某个mesh中引用该动画
+    box.animations.push(xSlide)
+    // 开始在这个场景中执行该mesh的动画
+    scene.beginAnimation(
+      box,// target
+      0,// from
+      2*frameRate, // to
+      true //loop
+    )
+
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>

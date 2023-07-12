@@ -76,12 +76,19 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
   - [babylonView的使用，](https://doc.babylonjs.com/features/featuresDeepDive/babylonViewer)[基于webComponent的实现](https://www.npmjs.com/package/babylonjs-viewer)
   - [viewer源码](https://github.com/BabylonJS/Babylon.js/tree/master/packages/tools/viewer)
 
-
+# 关于图形填充
 ## 关于扫描填充
 - 利用奇偶校验进行内部区域识别
 - 将各种多边形分解为三角形，因为三角形是凸多边形，这样可以简化通用填充算法。
 - 利用图形与扫描线的一些相关特征，例如使用增量方法可以减少重复填充[计算机图形学6.10]()
-
+## 关于边界填充算法
+- 4-连通区域
+  - 结合堆栈和扫描线结构进行区域填充[计算机图形6.13]()
+- 8-连通区域
+## 反走样相关
+- 奈奎斯特香农定义，增加采样率。在高分辨率上进行采样，低分辨率进行显示。即过取样
+- 子像素加权掩模
+- 关于45°线的亮度矫正。（即利用线的斜率来调整其亮度）
 
 # babylonjs
 - 相机跟随
