@@ -99,13 +99,18 @@
             new BABYLON.Vector3(-6, 0, 0),//初始位置
             scene
     )
+    // 相机高于目标局部中心的目标高度
+    camera.heightOffset = 10
+    // 摄像机在x y平面上围绕目标的局部原点中心的目标旋转
+    camera.rotationOffset = 100
+
+
     // 相机和目标之间的距离
     camera.radius = 1
-    // 相机高于目标局部中心的目标高度
-    camera.heightOffset = 8
-    // 摄像机在x y平面上围绕目标的局部原点中心的目标旋转
-    camera.rotationOffset = 0
+    // 相机从初始位置移动到目标距离位置的加速度（转向时的速度）
+    camera.cameraAcceleration = 0.005
     // 加速停止时的速度
+    // 从初始位置 当相机与目标之间的距离的移动速度
     camera.maxCameraSpeed = 10
     // const dir01 = new BABYLON.DirectionalLight(
     //   'dir01',

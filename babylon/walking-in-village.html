@@ -165,7 +165,11 @@
 
 
 
-    BABYLON.SceneLoader.ImportMeshAsync('','./files/','car.babylon').then(()=>{
+    BABYLON.SceneLoader.ImportMeshAsync(
+      '',
+      './files/',
+      'car.babylon'
+    ).then(()=>{
       const car = scene.getMeshByName('car')
       car.rotation = new BABYLON.Vector3(-Math.PI/2,Math.PI/2,)
       car.position.y = 0.16
