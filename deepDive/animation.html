@@ -33,7 +33,6 @@
   const engine = new BABYLON.Engine(canvas,true)
   const createScene = function (){
     const scene = new BABYLON.Scene(engine)
-    BABYLON.SceneLoader.ImportMeshAsync('','./files/','box.babylon')
     const camera = new BABYLON.ArcRotateCamera(
       'camera',
       -Math.PI/2,
@@ -86,19 +85,63 @@
     })
     // 动画设置关键帧
     xSlide.setKeys(keyFrames)
+
+
+    /***
+     * todo
+     * 启用动画的两种方式
+     * 1.
+     * box.animations.push(xSlide)
+     * scene.beginAnimation(
+     *       box,// target
+     *       0,// from
+     *       2*frameRate, // to
+     *       true //loop
+     *     )
+     *
+     * 2.
+     * scene.beginDirectAnimation(
+     *       box,
+     *       [xSlide],
+     *       0,
+     *       2*frameRate,
+     *       true
+     *     )
+     */
     // 在某个mesh中引用该动画
-    box.animations.push(xSlide)
-    // 开始在这个场景中执行该mesh的动画
-    scene.beginAnimation(
-      box,// target
-      0,// from
-      2*frameRate, // to
-      true //loop
+    // box.animations.push(xSlide)
+    // // 开始在这个场景中执行该mesh的动画
+    // scene.beginAnimation(
+    //   box,// target
+    //   0,// from
+    //   2*frameRate, // to
+    //   true //loop
+    // )
+
+    const myAnim = scene.beginDirectAnimation(
+      box,
+      [xSlide],
+      0,
+      2*frameRate,
+      true
     )
+    setTimeout(()=>{
+      console.log('暂停动画')
+      myAnim.pause()
+    },2000)
 
-
-
-
+    setTimeout(()=>{
+      console.log('重启')
+      myAnim.restart()
+    },4000)
+    setTimeout(()=>{
+      console.log('重置动画')
+      myAnim.reset()
+    },6000)
+    setTimeout(()=>{
+      console.log('停止')
+      myAnim.stop()
+    },8000)
 
 
     return scene
