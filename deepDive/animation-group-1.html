@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>template</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  import * as GUI from "babylonjs-gui";
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      0,
+      0.8,
+      100,
+      new BABYLON.Vector3(0,0,0),
+      scene
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+      'light',
+      new BABYLON.Vector3(0,100,100),
+      scene
+    )
+
+
+
+    const box1 = BABYLON.MeshBuilder.CreateBox('box1',{
+      size:10
+    },scene)
+    box1.position.x = -20
+    const box2 = BABYLON.MeshBuilder.CreateBox('box2',{
+      size:10
+    },scene)
+
+    const materialBox = new BABYLON.StandardMaterial(
+      'texture1',scene
+    )
+    materialBox.diffuseColor = new BABYLON.Color3(0,1,0)
+    const materialBox2 = new BABYLON.StandardMaterial(
+      'texture2',scene
+    )
+    box1.material = materialBox
+    box2.material = materialBox2
+
+    box2.position.x = 20
+
+
+
+    // 创建动画
+    // 第一个动画
+    // 这里设置了帧率和要变化的属性
+    const animation1 = new BABYLON.Animation(
+      'tutoAnimation',
+      'scaling.x',
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    let keys = []
+    keys.push({
+      frame:0,
+      value:1
+    })
+    keys.push({
+      frame:20,
+      value:0.2
+    })
+    keys.push({
+      frame:100,
+      value:1
+    })
+    animation1.setKeys(keys)
+
+    const animation2 = new BABYLON.Animation(
+      'tutoAnimation',
+      'rotation.y',
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+
+    keys = []
+    keys.push({
+      frame:0,
+      value:0
+    })
+    keys.push({
+      frame:40,
+      value:Math.PI
+    })
+    keys.push({
+      frame:80,
+      value:0
+    })
+    animation2.setKeys(keys)
+
+    // 创建一个动画组
+    const animationGroup = new BABYLON.AnimationGroup('my group')
+
+    animationGroup.addTargetedAnimation(animation1,box1)
+    animationGroup.addTargetedAnimation(animation2,box1)
+    // 重新设置动画帧
+    // 定义的动画开始帧 大于我们现在指定的开始值0，那么就使用指定的开始值
+    // 定义动画的结束帧 小于我们当前指定的结束值100，那么就使用我们的结束值100
+    // 即 我们制定的范围尽量包含动画自身的范围
+    animationGroup.normalize(0,100)
+
+    animationGroup.play(true)
+    // 将动画组归一化为同一个时间轴
+
+
+
+
+    // 添加UI按钮
+    const advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
+      'UI'
+    )
+    const panel = new GUI.StackPanel()
+    panel.isVertical = false
+    panel.verticalAlignment  = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM
+    advancedTexture.addControl(panel)
+    const addButton = function (text,callback){
+      const button = GUI.Button.CreateSimpleButton('button',text)
+      button.width = '140px'
+      button.height = '40px'
+      button.color = 'white'
+      button.background = 'green'
+      button.paddingLeft = '10px'
+      button.paddingRight = '10px'
+      button.onPointerUpObservable.add(()=>{
+        callback()
+      })
+      panel.addControl(button)
+    }
+    addButton('play',()=>{animationGroup.play(true)})
+    addButton('pause',()=>{animationGroup.pause()})
+    addButton('stop',()=>{animationGroup.stop()})
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>

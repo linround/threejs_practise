@@ -21,6 +21,7 @@ function getFiles(fold){
 }
 getFiles('./manual/')
 getFiles('./babylon/')
+getFiles('./deepDive/')
 
 
 export default {
