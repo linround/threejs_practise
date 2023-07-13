@@ -62,7 +62,7 @@
             },
             scene
     )
-    // 枢
+    // 门枢
     const hinge = BABYLON.MeshBuilder.CreateBox(
             'hinge',
             {},// 默认是一个单位
@@ -106,8 +106,8 @@
                 ),
                 Math.PI/8,5,scene
         )
-        spotLights[i].diffuse = new BABYLON.Color3(1,1,1)
-        spotLights[i].specular = new BABYLON.Color3(.5,.5,.5)
+        spotLights[i].diffuse = new BABYLON.Color3(0.5,0.5,0.5)
+        spotLights[i].specular = new BABYLON.Color3(1,1,1)
         spotLights[i].intensity = 0
       }
 
@@ -146,7 +146,7 @@
       const movein_keys = []
       movein_keys.push({
         frame:0,
-        value:new BABYLON.Vector3(0,5,-30)
+        value:new BABYLON.Vector3(0,5,-100)
       })
 
       movein_keys.push({
