@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>animation-group-1</title>
+  <title>animation-group-2</title>
 
-    <style>
-      html, body {
-        overflow: hidden;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
 
-      #renderCanvas {
-        width: 100%;
-        height: 100%;
-        touch-action: none;
-      }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
 
-    </style>
+  </style>
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
@@ -35,18 +35,18 @@
   const createScene = function (){
     const scene = new BABYLON.Scene(engine)
     const camera = new BABYLON.ArcRotateCamera(
-      'camera',
-      0,
-      0.8,
-      100,
-      new BABYLON.Vector3(0,0,0),
-      scene
+            'camera',
+            0,
+            0.8,
+            100,
+            new BABYLON.Vector3(0,0,0),
+            scene
     )
     camera.attachControl(canvas,true)
     new BABYLON.HemisphericLight(
-      'light',
-      new BABYLON.Vector3(0,100,100),
-      scene
+            'light',
+            new BABYLON.Vector3(0,100,100),
+            scene
     )
 
 
@@ -60,11 +60,11 @@
     },scene)
 
     const materialBox = new BABYLON.StandardMaterial(
-      'texture1',scene
+            'texture1',scene
     )
     materialBox.diffuseColor = new BABYLON.Color3(0,1,0)
     const materialBox2 = new BABYLON.StandardMaterial(
-      'texture2',scene
+            'texture2',scene
     )
     box1.material = materialBox
     box2.material = materialBox2
@@ -73,15 +73,16 @@
 
 
 
+
     // 创建动画
     // 第一个动画
     // 这里设置了帧率和要变化的属性
     const animation1 = new BABYLON.Animation(
-      'tutoAnimation',
-      'scaling.x',
-      30,
-      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            'tutoAnimation',
+            'scaling.x',
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
     )
     let keys = []
     keys.push({
@@ -99,11 +100,11 @@
     animation1.setKeys(keys)
 
     const animation2 = new BABYLON.Animation(
-      'tutoAnimation',
-      'rotation.y',
-      30,
-      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            'tutoAnimation',
+            'rotation.y',
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
     )
 
     keys = []
@@ -124,23 +125,49 @@
     // 创建一个动画组
     const animationGroup = new BABYLON.AnimationGroup('my group')
 
+    // 在这里将动画帧和目标对象对应起来
+    // 动画组相当于将多组动画的api合并
     animationGroup.addTargetedAnimation(animation1,box1)
     animationGroup.addTargetedAnimation(animation2,box1)
+    animationGroup.addTargetedAnimation(animation2,box2)
     // 重新设置动画帧
     // 定义的动画开始帧 大于我们现在指定的开始值0，那么就使用指定的开始值
     // 定义动画的结束帧 小于我们当前指定的结束值100，那么就使用我们的结束值100
     // 即 我们制定的范围尽量包含动画自身的范围
     animationGroup.normalize(0,100)
+    // 使用 speedRatio 可以加速动画帧的播放速度
+    animationGroup.speedRatio = 2
 
     animationGroup.play(true)
-    // 将动画组归一化为同一个时间轴
 
 
 
+    // 监听动画结束的阶段
+    // 将box1的纹理赋值为蓝色
+    animationGroup.onAnimationEndObservable.add(()=>{
+      const materialBlue = new BABYLON.StandardMaterial(
+              'texture1',scene
+      )
+      materialBlue.diffuseColor = new BABYLON.Color3(0,0,1)
+      box1.material = materialBlue
+    })
+    // 这里的循环是指整个帧运行完毕
+    // 所以会受到 speedRatio 的影响
+    animationGroup.onAnimationGroupLoopObservable.add(()=>{
+      const material = new BABYLON.StandardMaterial(
+              'texture1',scene
+      )
+      material.diffuseColor = new BABYLON.Color3(
+              Math.random(),
+              Math.random(),
+              Math.random())
+      box1.material = material
+      box2.material = material
+    })
 
     // 添加UI按钮
     const advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
-      'UI'
+            'UI'
     )
     const panel = new GUI.StackPanel()
     panel.isVertical = false
@@ -161,7 +188,10 @@
     }
     addButton('play',()=>{animationGroup.play(true)})
     addButton('pause',()=>{animationGroup.pause()})
-    addButton('stop',()=>{animationGroup.stop()})
+    addButton('stop',()=>{
+      animationGroup.reset()
+      animationGroup.stop()
+    })
 
 
 
