@@ -16,8 +16,210 @@
     height: 100%;
     display: block;
   }
+  .links{
+    position: fixed;
+  }
+  .links>.link{
+    color: white;
+    text-decoration-line: none;
+    transition: all .3s ease-in-out;
+    margin:4px 8px;
+  }
+  .links>.link:hover{
+    color: yellow;
+  }
 </style>
 <body>
+<div class="links">
+    <a class="link" href="./deepDive/animation-sequencing.html">
+        animation-sequencing
+    </a>
+</div>
 <canvas id="c"></canvas>
 </body>
 </html>
+<script>
+
+  function createLinks(){
+    const manualLinks = {
+      prefix:'./manual/',
+      names:[
+        'align-html-elements-to-3d-globe-too-many-labels.html',
+        'align-html-elements-to-3d-globe.html',
+        'align-html-to-3d-w-sorting.html',
+        'align-html-to-3d.html',
+        'background-css.html',
+        'background-cubemap.html',
+        'background-equirectangularmap.html',
+        'background-scene-background.html',
+        'billboard-labels-w-sprites.html',
+        'billboard-trees-no-billboards.html',
+        'billboard-trees-static-billboards.html',
+        'cameras-orthographic-2-scenes.html',
+        'cameras-orthographic-canvas-top-left-origin.html',
+        'cameras-perspective-2-scenes.html',
+        'cameras-perspective.html',
+        'cameras-z-fighting.html',
+        'canvas-random-dots.html',
+        'canvas-textured-cube.html',
+        'canvas-textured-labels-one-canvas.html',
+        'canvas-textured-labels-scale-to-fit.html',
+        'canvas-textured-labels.html',
+        'cleanup-loaded-files.html',
+        'cleanup-simple.html',
+        'custom-buffergeometry-cube-indexed.html',
+        'custom-buffergeometry-cube-typedarrays.html',
+        'custom-buffergeometry-cube.html',
+        'custom-buffergeometry-dynamic.html',
+        'fog.html',
+        'game-check-animations.html',
+        'game-conga-line.html',
+        'game-just-player.html',
+        'game-load-models.html',
+        'game-player-input.html',
+        'gpw-data-viewer.html',
+        'indexed-textures-picking-and-highlighting.html',
+        'indexed-textures-picking.html',
+        'indexed-textures-random-colors.html',
+        'lights-ambient.html',
+        'lights-directional-w-helper.html',
+        'lights-directional.html',
+        'lights-hemisphere.html',
+        'lights-point-physically-correct.html',
+        'lights-point.html',
+        'lights-rectarea.html',
+        'lights-spot-w-helper.html',
+        'load-gltf-animated-cars.html',
+        'load-gltf-rotate-cars-fixed.html',
+        'load-gltf.html',
+        'load-obj-materials-fixed.html',
+        'load-obj-materials.html',
+        'load-obj-no-materials.html',
+        'load-obj-wat.html',
+        'lots-of-objects-merged.html',
+        'lots-of-objects-morphtargets.html',
+        'lots-of-objects-multiple-data-sets.html',
+        'lots-of-objects-slow.html',
+        'multiple-scenes-controls.html',
+        'multiple-scenes-copy-canvas.html',
+        'multiple-scenes-generic.html',
+        'multiple-scenes-v1.html',
+        'offscreencanvas-w-orbitcontrols.html',
+        'offscreencanvas-w-picking.html',
+        'offscreencanvas.html',
+        'picking-gpu.html',
+        'picking-raycaster-transparency.html',
+        'picking-raycaster.html',
+        'postprocessing-3dlut-identity.html',
+        'postprocessing-3dlut-prep.html',
+        'postprocessing-custom.html',
+        'postprocessing.html',
+        'render-on-demand-w-damping.html',
+        'render-on-demand.html',
+        'render-target.html',
+        'response.html',
+        'scenegraph-sun.html',
+        'scenegraph-tank.html',
+        'shadertoy-as-texture.html',
+        'shadertoy-basic.html',
+        'shadertoy-bleepy-blocks.html',
+        'shadows-directional-light.html',
+        'shadows-fake.html',
+        'shadows-point-light.html',
+        'shadows-spot-light-with-camera-gui.html',
+        'template.html',
+        'textured-cube-6-textures.html',
+        'textured-cube-wait-for-all-textures.html',
+        'textured-cube.html',
+        'tips-html-background.html',
+        'tips-screenshot-bad.html',
+        'tips-transparent-canvas.html',
+        'transparency-intersecting-planes-alphatest.html',
+        'transparency-intersecting-planes-fixed.html',
+        'transparency-intersecting-planes.html',
+        'transparency.html',
+        'voxel-geometry-culled-faces-ui.html',
+        'voxel-geometry-culled-faces-with-textures.html',
+        'voxel-geometry-culled-faces.html',
+        'voxel-geometry-separate-cubes.html'
+      ]
+
+    }
+    const deepDiveLinks = {
+      prefix:'./deepDive/',
+      names:[
+        'animation-sequencing.html',
+        'animation.html'
+      ]
+    }
+    const babylonLinks = {
+      prefix:'./babylon/',
+      names:[
+        'avoiding-collision-car-man.html',
+        'avoiding-collisions.html',
+        'box-house-semi-face.html',
+        'box-house-texture-face.html',
+        'box-house-texture.html',
+        'box-house.html',
+        'boxes.html',
+        'car-in-village.html',
+        'car-mesh.html',
+        'car-model.html',
+        'car-uv-map.html',
+        'car-wheel-animate.html',
+        'copy-mesh-multiple.html',
+        'copy-mesh.html',
+        'distant-hills-2.html',
+        'distant-hills-3.html',
+        'distant-hills-4.html',
+        'distant-hills-5.html',
+        'distant-hills.html',
+        'index.html',
+        'mesh-combine.html',
+        'methods-for-import.html',
+        'shadow.html',
+        'track-line.html',
+        'village.html',
+        'walking-in-village.html',
+        'walking.html'
+
+      ]
+    }
+
+    const links = []
+    manualLinks.names.map(name=>{
+      links.push({
+        href:`${manualLinks.prefix}${name}`,
+        name
+      })
+    })
+    babylonLinks.names.map(name=>{
+      links.push({
+        href:`${babylonLinks.prefix}${name}`,
+        name
+      })
+    })
+    deepDiveLinks.names.map(name=>{
+      links.push({
+        href:`${deepDiveLinks.prefix}${name}`,
+        name
+      })
+    })
+    return links
+  }
+
+
+  const links = createLinks()
+  function createUI(links){
+    const linkContainer = document.querySelector('.links')
+    links.map(link=>{
+      const element = document.createElement('a')
+      element.className = 'link'
+      element.href = link.href
+      element.textContent = link.name
+      element.target='_blank'
+      linkContainer.appendChild(element)
+    })
+  }
+  createUI(links)
+</script>
