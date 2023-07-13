@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>动画剪辑</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const light1 = new BABYLON.DirectionalLight(
+            'DirectionalLight',
+            new BABYLON.Vector3(0,-1,0),
+            scene
+    )
+    const light2 = new BABYLON.HemisphericLight(
+            'HemisphericLight',
+            new BABYLON.Vector3(0,1,-1),
+            scene
+    )
+    light1.intensity = 0.25
+    light2.intensity = 0.5
+    const frameRate = 20
+    // 使用万能相机
+    const camera = new BABYLON.UniversalCamera(
+            'UniversalCamera',
+            new BABYLON.Vector3(0,3,-30),
+            scene
+    )
+    camera.attachControl(canvas,true)
+    const door = BABYLON.MeshBuilder.CreateBox(
+            'door',
+            {
+              width:2,
+              height:4,
+              depth:0.1
+            },
+            scene
+    )
+    // 枢
+    const hinge = BABYLON.MeshBuilder.CreateBox(
+            'hinge',
+            {},// 默认是一个单位
+            scene
+    )
+    hinge.isVisible = false
+    door.parent = hinge
+    hinge.position.y = 2
+    door.position.x = -1
+
+    const sphereLight = BABYLON.MeshBuilder.CreateSphere(
+            'sphere',
+            {diameter:0.2},
+            scene
+    )
+    sphereLight.material = new BABYLON.StandardMaterial('',scene)
+    // 设置发光属性
+    sphereLight.material.emissiveColor = new BABYLON.Color3(1,1,1)
+    sphereLight.position.x = 2
+    sphereLight.position.y = 3
+    sphereLight.position.z = 0.1
+
+    const sphereLights = [sphereLight]
+    const lightPositions = [-2,3,6.9]
+
+    const spotLights = []
+    const lightDirections = [-.5,-.25,1,0,0,-1]
+    for(let i =0;i<1;i++){
+      sphereLights.push(sphereLight.clone(''))
+      sphereLights[i+1].position = new BABYLON.Vector3(
+        lightPositions[3*i],lightPositions[3*i+1],lightPositions[3*i+2],
+      )
+      for (let i=0;i<sphereLights.length;i++){
+        spotLights[i] = new BABYLON.SpotLight(
+                'spotlight'+i,
+                sphereLights[i].position,
+                new BABYLON.Vector3(
+                        lightDirections[3*i],
+                        lightDirections[3*i+1],
+                        lightDirections[3*i+2],
+                ),
+                Math.PI/8,5,scene
+        )
+        spotLights[i].diffuse = new BABYLON.Color3(1,1,1)
+        spotLights[i].specular = new BABYLON.Color3(.5,.5,.5)
+        spotLights[i].intensity = 0
+      }
+
+
+      // 相机围绕旋转
+      const rotate = new BABYLON.Animation(
+              "rotate",
+              "rotation.y",
+              frameRate,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      )
+      const rotate_keys = []
+      rotate_keys.push({
+        frame:0,
+        value:0
+      })
+      rotate_keys.push({
+        frame:9*frameRate,
+        value:0
+      })
+      rotate_keys.push({
+        frame:14*frameRate,
+        value:Math.PI
+      })
+      rotate.setKeys(rotate_keys)
+
+    //   相机向前移动
+      const movein = new BABYLON.Animation(
+              'movein',
+              'position',
+              frameRate,
+              BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      )
+      const movein_keys = []
+      movein_keys.push({
+        frame:0,
+        value:new BABYLON.Vector3(0,5,-30)
+      })
+
+      movein_keys.push({
+        frame:3*frameRate,
+        value:new BABYLON.Vector3(0,2,-10)
+      })
+      movein_keys.push({
+        frame:5*frameRate,
+        value:new BABYLON.Vector3(0,2,-10)
+      })
+      movein_keys.push({
+        frame:8*frameRate,
+        value:new BABYLON.Vector3(-2,2,3)
+      })
+      movein.setKeys(movein_keys)
+
+
+    //   开门和关门
+      const sweep = new BABYLON.Animation(
+              'sweep',
+              'rotation.y',
+              frameRate,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      )
+      const sweep_keys = []
+      sweep_keys.push({
+        frame:0,
+        value:0
+      })
+      sweep_keys.push({
+        frame:3*frameRate,
+        value:0
+      })
+      sweep_keys.push({
+        frame:5*frameRate,
+        value:Math.PI/3
+      })
+      sweep_keys.push({
+        frame:13*frameRate,
+        value:Math.PI/3
+      })
+      sweep_keys.push({
+        frame:15*frameRate,
+        value:0
+      })
+
+      sweep.setKeys(sweep_keys)
+
+
+    //   灯光 变亮再变暗
+      const lightDimmer = new BABYLON.Animation(
+              'dimmer',
+              'intensity',
+              frameRate,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      )
+      const light_keys = []
+      light_keys.push({
+        frame:0,
+        value:0
+      })
+      light_keys.push({
+        frame:7*frameRate,
+        value:0
+      })
+      light_keys.push({
+        frame:10*frameRate,
+        value:1
+      })
+      light_keys.push({
+        frame:14*frameRate,
+        value:1
+      })
+      light_keys.push({
+        frame:15*frameRate,
+        value:0.5
+      })
+      lightDimmer.setKeys(light_keys)
+
+      scene.beginDirectAnimation(
+              camera,
+              [movein,rotate],
+              0,
+              25*frameRate,
+              false
+      )
+      scene.beginDirectAnimation(
+              hinge,
+              [sweep],
+              0,
+              25*frameRate,
+              false
+      )
+      scene.beginDirectAnimation(
+              spotLights[0],
+              [lightDimmer],
+              0,
+              25*frameRate,
+              false
+      )
+      scene.beginDirectAnimation(
+              spotLights[1],
+              [lightDimmer.clone()],
+              0,
+              25*frameRate,
+              false
+      )
+
+      const ground = BABYLON.MeshBuilder.CreateGround(
+              'ground',
+              {
+                width:50,
+                height:50
+              },
+              scene
+      )
+    //   墙体
+      const wall1 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:8,
+                height:6,
+                depth:0.1
+              },
+              scene
+      )
+      wall1.position.x = -6
+      wall1.position.y = 3
+
+
+      const wall2 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:4,
+                height:6,
+                depth:0.1
+              },
+              scene
+      )
+      wall2.position.x = 2
+      wall2.position.y = 3
+
+
+      const wall3 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:2,
+                height:2,
+                depth:0.1
+              },
+              scene
+      )
+      wall3.position.x = -1
+      wall3.position.y = 5
+
+
+      const wall4 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:14,
+                height:6,
+                depth:0.1
+              },
+              scene
+      )
+      wall4.position.x = -3
+      wall4.position.y = 3
+      wall4.position.z = 7
+
+
+      const wall5 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:7,
+                height:6,
+                depth:0.1
+              },
+              scene
+      )
+      wall5.rotation.y = Math.PI/2
+      wall5.position.x = -10
+      wall5.position.y = 3
+      wall5.position.z = 3.5
+
+
+      const wall6 = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:7,
+                height:6,
+                depth:0.1
+              },
+              scene
+      )
+      wall6.rotation.y = Math.PI/2
+      wall6.position.x = 4
+      wall6.position.y = 3
+      wall6.position.z = 3.5
+
+
+      const roof = BABYLON.MeshBuilder.CreateBox(
+              'door',
+              {
+                width:14,
+                height:7,
+                depth:0.1
+              },
+              scene
+      )
+      roof.rotation.x = Math.PI/2
+      roof.position.x = -3
+      roof.position.y = 6
+      roof.position.z = 3.5
+
+    }
+
+
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
