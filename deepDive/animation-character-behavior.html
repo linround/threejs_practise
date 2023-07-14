@@ -38,13 +38,13 @@
       'camera',
       Math.PI/2,
       Math.PI/4,
-      2000,
+      15,
       new BABYLON.Vector3(0,1,0),
       scene
     )
     camera.attachControl(canvas,true)
     camera.lowerRadiusLimit = 2
-    camera.upperRadiusLimit = 3000
+    camera.upperRadiusLimit = 20
     camera.wheelDeltaPercentage = 0.01
 
     const light = new BABYLON.HemisphericLight(
@@ -74,7 +74,6 @@
       scene,
       (newMeshes,particleSystems,skeletons)=>{
         const hero = newMeshes[0]
-        hero.scaling = new BABYLON.Vector3(250,250,250)
         camera.target = hero
         const skeleton = skeletons[0]
         shadowGenerator.addShadowCaster(scene.meshes[0],true)
@@ -82,16 +81,11 @@
           newMeshes[index].receiveShadows = false
         }
 
-        const ground = BABYLON.MeshBuilder.CreateGround("ground", {
-          height: 100000, width: 100000, subdivisions: 4
-        }, scene);
-        const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
-        groundMaterial.diffuseTexture = new BABYLON.Texture("./files/ground.jpg", scene);
-        groundMaterial.diffuseTexture.uScale = 40;
-        groundMaterial.diffuseTexture.vScale = 40;
-        groundMaterial.specularColor = new BABYLON.Color3(.1, .1, .1);
-        ground.material = groundMaterial;
-        ground.receiveShadows = true
+        const helper = scene.createDefaultEnvironment({
+          enableGroundShadow: true
+        });
+        helper.setMainColor(BABYLON.Color3.Gray());
+        helper.ground.position.y += 0.01;
 
         const idleAnim = scene.beginWeightedAnimation(
           skeleton,0,89,1,true
@@ -138,9 +132,9 @@
           uiPanel.addControl(slider)
           slider.onValueChangedObservable.add(v=>{
             param.anim.weight = v
-            let speed = 10
+            let speed = 3000
             if(slider.name==='Run') {
-              speed = 5
+              speed = 1500
             }
             header.text = param.name + ':' + param.anim.weight.toFixed(2)
             if(slider.name==='Walk' || slider.name==='Run') {
@@ -184,8 +178,6 @@
               walkAnim._slider.value = 1-idleAnim._slider.value
             }
           })
-
-
         })
         uiPanel.addControl(button)
 
@@ -221,7 +213,29 @@
         })
         uiPanel.addControl(button2)
 
+        const button3 = GUI.Button.CreateSimpleButton('btn2','To Left')
+        button3.paddingTop = '10px'
+        button3.width = '100px'
+        button3.height = '50px'
+        button3.color = 'white'
+        button3.background = 'green'
+        button3.onPointerDownObservable.add(()=>{
 
+
+          hero.rotate(BABYLON.Vector3.Up(), -1);
+        })
+        uiPanel.addControl(button3)
+        const button4 = GUI.Button.CreateSimpleButton('btn2','To Right')
+        button4.paddingTop = '10px'
+        button4.width = '100px'
+        button4.height = '50px'
+        button4.color = 'white'
+        button4.background = 'green'
+        button4.onPointerDownObservable.add(()=>{
+
+          hero.rotate(BABYLON.Vector3.Up(), 1);
+        })
+        uiPanel.addControl(button4)
       }
     )
 
