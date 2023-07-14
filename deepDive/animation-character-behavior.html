@@ -130,6 +130,63 @@
           param.anim._slider = slider
 
         })
+        const button = GUI.Button.CreateSimpleButton('bt0','idle to walk')
+        button.paddingTop = '10px'
+        button.width = '100px'
+        button.height = '50px'
+        button.color = 'white'
+        button.background = 'green'
+        button.onPointerDownObservable.add(()=>{
+          idleAnim._slider.value = 1
+          walkAnim._slider.value = 0
+          runAnim._slider.value = 0
+          walkAnim.syncWith(null)
+          idleAnim.syncWith(walkAnim)
+          let obs = scene.onBeforeAnimationsObservable.add(()=>{
+            idleAnim._slider.value -= 0.01
+            if(idleAnim._slider.value <=0){
+              scene.onBeforeAnimationsObservable.remove(obs)
+              idleAnim._slider.value = 0
+              walkAnim._slider.value = 1.0
+              runAnim._slider.value = 0
+            } else {
+              walkAnim._slider.value = 1-idleAnim._slider.value
+            }
+          })
+        })
+        uiPanel.addControl(button)
+
+
+        const button2 = GUI.Button.CreateSimpleButton('btn2','walk to run')
+        button2.paddingTop = '10px'
+        button2.width = '100px'
+        button2.height = '50px'
+        button2.color = 'white'
+        button2.background = 'green'
+        button2.onPointerDownObservable.add(()=>{
+          walkAnim._slider.value = 1
+          idleAnim._slider.value =0
+          runAnim._slider.value = 0
+          walkAnim.syncWith(runAnim)
+
+          let obs = scene.onBeforeAnimationsObservable.add(()=>{
+            walkAnim._slider.value -=0.01
+            idleAnim._slider.value = 0
+            runAnim._slider.value = 0
+
+            if(walkAnim._slider.value <=0){
+              scene.onBeforeAnimationsObservable.remove(obs)
+              walkAnim._slider.value = 0
+              runAnim._slider.value = 1
+            } else {
+              runAnim._slider.value = 1- walkAnim._slider.value
+            }
+
+          })
+
+
+        })
+        uiPanel.addControl(button2)
 
 
       }
