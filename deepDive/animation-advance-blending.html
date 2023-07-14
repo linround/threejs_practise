@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>animation-advance-blending</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            0,
+            0.8,
+            100,
+            new BABYLON.Vector3(0,0,0),
+            scene
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(0,100,100),
+            scene
+    )
+
+    const box1 = new BABYLON.MeshBuilder.CreateBox(
+            'box1',
+            {size:10},
+            scene
+    )
+    box1.position.x = -20
+    const materialBox = new BABYLON.StandardMaterial('mat',scene)
+    materialBox.diffuseColor = new BABYLON.Color3(0,1,0)
+    box1.material = materialBox
+
+
+    const animationBox = new BABYLON.Animation(
+            'tutoAnimation',
+            'position.z',
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const keys =[]
+    keys.push({
+      frame:0,
+      value:0
+    })
+    keys.push({
+      frame:30,
+      value:20
+    })
+    keys.push({
+      frame:60,
+      value:0
+    })
+    animationBox.setKeys(keys)
+    box1.animations.push(animationBox);
+    scene.beginAnimation(box1,0,100,true)
+
+
+    // 混合动画
+    const animation2Box = new BABYLON.Animation(
+            'tuto',
+            'position.y',
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    animation2Box.enableBlending = true
+    animation2Box.blendingSpeed = 0.01
+    const keys2 = []
+    keys2.push({
+      frame:0,
+      value:0
+    })
+    keys2.push({
+      frame:30,
+      value:20
+    })
+    keys2.push({
+      frame:60,
+      value:0
+    })
+    animation2Box.setKeys(keys2)
+    let runtimeAnimation
+    scene.onPointerDown = (event,pickResult)=>{
+      if(pickResult.pickedMesh){
+        scene.stopAnimation(box1)
+        runtimeAnimation = scene.beginDirectAnimation(
+                box1,
+                [animation2Box],
+                0,
+                100,
+                true
+        )
+      }
+    }
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
