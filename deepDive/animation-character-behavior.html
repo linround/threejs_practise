@@ -38,13 +38,13 @@
       'camera',
       Math.PI/2,
       Math.PI/4,
-      3,
+      2000,
       new BABYLON.Vector3(0,1,0),
       scene
     )
     camera.attachControl(canvas,true)
     camera.lowerRadiusLimit = 2
-    camera.upperRadiusLimit = 10
+    camera.upperRadiusLimit = 3000
     camera.wheelDeltaPercentage = 0.01
 
     const light = new BABYLON.HemisphericLight(
@@ -73,15 +73,25 @@
       'dummy2.babylon',
       scene,
       (newMeshes,particleSystems,skeletons)=>{
+        const hero = newMeshes[0]
+        hero.scaling = new BABYLON.Vector3(250,250,250)
+        camera.target = hero
         const skeleton = skeletons[0]
         shadowGenerator.addShadowCaster(scene.meshes[0],true)
         for(let index=0;index<newMeshes.length;index++){
           newMeshes[index].receiveShadows = false
         }
-        const helper = scene.createDefaultEnvironment({
-          enableGroundShadow:true
-        })
-        helper.setMainColor(BABYLON.Color3.White())
+
+        const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+          height: 100000, width: 100000, subdivisions: 4
+        }, scene);
+        const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+        groundMaterial.diffuseTexture = new BABYLON.Texture("./files/ground.jpg", scene);
+        groundMaterial.diffuseTexture.uScale = 40;
+        groundMaterial.diffuseTexture.vScale = 40;
+        groundMaterial.specularColor = new BABYLON.Color3(.1, .1, .1);
+        ground.material = groundMaterial;
+        ground.receiveShadows = true
 
         const idleAnim = scene.beginWeightedAnimation(
           skeleton,0,89,1,true
@@ -106,11 +116,13 @@
           {name:'Run',anim:runAnim},
         ]
 
+
+
         params.forEach(param=>{
           const header = new GUI.TextBlock()
           header.text = param.name+':'+param.anim.weight.toFixed(2)
           header.height = '40px'
-          header.color = 'green'
+          header.color = 'white'
           header.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT
           header.paddingTop = '10px'
           uiPanel.addControl(header)
@@ -118,18 +130,36 @@
           slider.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT
           slider.minimum = 0
           slider.maximum = 1
-          slider.color = 'green'
+          slider.color = 'yellow'
           slider.value = param.anim.weight
           slider.height = '20px'
           slider.width = '205px'
+          slider.name = param.name
           uiPanel.addControl(slider)
           slider.onValueChangedObservable.add(v=>{
             param.anim.weight = v
+            let speed = 10
+            if(slider.name==='Run') {
+              speed = 5
+            }
             header.text = param.name + ':' + param.anim.weight.toFixed(2)
+            if(slider.name==='Walk' || slider.name==='Run') {
+             const forward = scene.onBeforeAnimationsObservable.add(()=>{
+                hero.moveWithCollisions(hero.forward.scaleInPlace(slider.value/speed))
+                if(slider.value<0.01 ){
+                  scene.onBeforeAnimationsObservable.remove(forward)
+                }
+              })
+            }
+
           })
           param.anim._slider = slider
 
         })
+
+
+
+
         const button = GUI.Button.CreateSimpleButton('bt0','idle to walk')
         button.paddingTop = '10px'
         button.width = '100px'
@@ -142,6 +172,7 @@
           runAnim._slider.value = 0
           walkAnim.syncWith(null)
           idleAnim.syncWith(walkAnim)
+
           let obs = scene.onBeforeAnimationsObservable.add(()=>{
             idleAnim._slider.value -= 0.01
             if(idleAnim._slider.value <=0){
@@ -153,6 +184,8 @@
               walkAnim._slider.value = 1-idleAnim._slider.value
             }
           })
+
+
         })
         uiPanel.addControl(button)
 
