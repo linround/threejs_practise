@@ -101,7 +101,7 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 - 通过调整像素强度的反走样过程来改善光栅图元的外貌
   - 过取样是一种反走样方法，即将每一像素看作子像素的组合并计算每一子像素的强度及其所有子像素的平均值。
   - 通过按照子像素的位置来确定其贡献值，并给中心以最高权值
-
+## [babylon中 加载.glb文件的问题](./deepDive/glb-test.html);[webpack中的示例](https://github.com/RaananW/babylonjs-webpack-es6/blob/master/src/scenes/loadModelAndEnv.ts)
 
 # babylonjs
 - 相机跟随
