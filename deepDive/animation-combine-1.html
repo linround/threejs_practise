@@ -1,10 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>animation-combine-1</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
 </head>
 <body>
+<canvas id="renderCanvas"></canvas>
 
 </body>
 </html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      -Math.PI/2,
+      Math.PI/4,
+      10,
+      new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+
+
+    const light1 = new BABYLON.DirectionalLight(
+      'DirectionalLight',
+      new BABYLON.Vector3(0,-1,1),
+      scene
+    )
+    const light2 = new BABYLON.HemisphericLight(
+      'HemisphericLight',
+      new BABYLON.Vector3(0,1,0),
+      scene
+    )
+    light1.intensity = .75
+    light2.intensity = .5
+
+    const box = BABYLON.MeshBuilder.CreateBox(
+      'box',
+      {},
+      scene
+    )
+    box.position.x = 2
+    const frameRate = 10
+    const xSlide = new BABYLON.Animation(
+      'xSlide',
+      'position.x',
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const keyFrames =[]
+    keyFrames.push({
+      frame:0,
+      value:2
+    })
+    keyFrames.push({
+      frame:frameRate,
+      value:-2
+    })
+    keyFrames.push({
+      frame:2*frameRate,
+      value:2
+    })
+    xSlide.setKeys(keyFrames)
+
+    const yRot = new BABYLON.Animation(
+      'yRot',
+      'rotation.y',
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const keyFramesR = []
+    keyFramesR.push({
+      frame:0,
+      value:0
+    })
+    keyFramesR.push({
+      frame:frameRate,
+      value:2*Math.PI
+    })
+    keyFramesR.push({
+      frame:2*frameRate,
+      value:8*Math.PI
+    })
+    yRot.setKeys(keyFramesR)
+
+
+
+    const zRot = new BABYLON.Animation(
+      'zRot',
+      'rotation.z',
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const keyFramesRZ = []
+    keyFramesRZ.push({
+      frame:0,
+      value:0
+    })
+    keyFramesRZ.push({
+      frame:2.5*frameRate,
+      value:Math.PI
+    })
+    keyFramesRZ.push({
+      frame:8*frameRate,
+      value:Math.PI*10
+    })
+    zRot.setKeys(keyFramesRZ)
+    const nextAnimation = function (){
+      scene.beginDirectAnimation(
+        box,
+        [xSlide,zRot],
+        0,
+        8*frameRate,
+        true
+      )
+    }
+
+    // animation 只是进行了帧动画的一些衔接
+    // 这里 使用一个动画集合
+    scene.beginDirectAnimation(
+      box,
+      [xSlide,yRot],
+      0,
+      2*frameRate,
+      false,
+      1,
+      nextAnimation
+    )
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
