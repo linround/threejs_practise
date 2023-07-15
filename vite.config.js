@@ -1,4 +1,5 @@
 const  fs = require('fs')
+import viteCompression from 'vite-plugin-compression'
 
 
 
@@ -13,7 +14,7 @@ function getFiles(fold){
   const htmlFile = files.filter(file =>{
     return htmlReg.test(file)
   })
-  console.log(htmlFile)
+  // console.log(htmlFile)
   htmlFile.map(file =>{
     const index = file.indexOf('.html')
     const name = file.substring(0,index)
@@ -26,6 +27,9 @@ getFiles('./deepDive/')
 
 
 export default {
+  plugins:[
+    viteCompression()
+  ],
  build:{
    rollupOptions:{
      input:{

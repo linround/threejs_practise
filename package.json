@@ -22,6 +22,7 @@
     "@babylonjs/core": "^6.12.1",
     "@babylonjs/loaders": "^6.12.1",
     "lil-gui": "^0.18.1",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9",
+    "vite-plugin-compression": "^0.5.1"
   }
 }
