@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>animation-bezier</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+      'camera',
+      0,
+      0.8,
+      100,
+      new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    new BABYLON.HemisphericLight(
+      'light',
+      new BABYLON.Vector3(0,100,100),
+      scene
+    )
+    const torus = BABYLON.MeshBuilder.CreateTorus(
+      'tour',
+      {
+        diameter:8,
+        thickness:2,
+        tessellation:32 // 镶嵌的柱体
+      },
+      scene,
+      false
+    )
+    torus.position.x = 25
+    torus.position.z = 30
+
+    const materialBox = new BABYLON.StandardMaterial('t1',scene)
+    materialBox.diffuseColor = new BABYLON.Color3(0,1,0)
+    const animationTorus = new BABYLON.Animation(
+      'toursAnimation',
+      'position',
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+
+    const nextPos = torus.position.add(new BABYLON.Vector3(-80,0,0))
+    const keysTorus = []
+    keysTorus.push({
+      frame:0,value:torus.position
+    })
+    keysTorus.push({
+      frame:120,value:nextPos
+    })
+    animationTorus.setKeys(keysTorus)
+
+    // 定义一个缓和函数
+    // 使用已有的缓和函数
+    const easingFunction = new BABYLON.SineEase()
+    // 使用的动画模式
+    easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT)
+    // 将该函数添加给动画
+    animationTorus.setEasingFunction(easingFunction)
+    torus.animations.push(animationTorus)
+
+    scene.beginAnimation(torus,0,120,true)
+
+
+
+    // 自动逸贝塞尔缓和函数
+    const bezierTorus = BABYLON.MeshBuilder.CreateTorus(
+      'bezierTorus',
+      {
+        diameter:8,
+        thickness:2,
+        tessellation:32
+      },
+      scene,
+    )
+    bezierTorus.position.x = 25
+    bezierTorus.position.z = 0
+
+    const animationBezierTorus = new BABYLON.Animation(
+      'animationBezierTorus',
+      'position',
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    )
+    const keysBezierTorus = []
+    keysBezierTorus.push({
+      frame:0,value:bezierTorus.position
+    })
+    keysBezierTorus.push({
+      frame:120,value:bezierTorus.position.add(new BABYLON.Vector3(-80,0,0))
+    })
+    animationBezierTorus.setKeys(keysBezierTorus)
+
+    const bezierEase = new BABYLON.BezierCurveEase(.32,-.73,.69,1.59)
+    animationBezierTorus.setEasingFunction(bezierEase)
+    bezierTorus.animations.push(animationBezierTorus)
+    scene.beginAnimation(bezierTorus,0,120,true)
+
+
+
+
+
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
