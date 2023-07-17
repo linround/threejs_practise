@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>collision</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            -Math.PI/2,
+            Math.PI/3.5,
+            25,
+            new BABYLON.Vector3(0,0,0)
+    )
+    camera.attachControl(canvas,true)
+    const light = new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(0,1,0),
+            scene
+    )
+    light.intensity = .7
+
+    const ground = BABYLON.MeshBuilder.CreateGround('ground',{
+      width:20,
+      height:20
+    },scene)
+    ground.material = new BABYLON.StandardMaterial('groundMat',scene)
+    ground.material.diffuseColor = new BABYLON.Color3(1,1,1)
+    ground.material.backFaceCulling = false
+
+
+    const randomNumber = function (min,max){
+      if(min===max){
+        return min
+      }
+      const random = Math.random()
+      return (random*(max-min))+min
+    }
+
+    const boxSize = 2
+    const box =new BABYLON.MeshBuilder.CreateBox('crate',{size:boxSize},scene)
+    box.material = new BABYLON.StandardMaterial('mat',scene)
+    box.material.diffuseTexture = new BABYLON.Texture('./files/crate.png',scene)
+
+    box.checkCollisions = true
+
+    const boxNb = 6;
+    let theta = 0;
+    const radius = 6;
+    box.position = new BABYLON.Vector3((
+                    radius +
+                    randomNumber(-0.5 * radius, 0.5 * radius)) *
+            Math.cos(theta + randomNumber(-0.1 * theta, 0.1 * theta)),
+            boxSize/2,
+            (radius + randomNumber(-0.5 * radius, 0.5 * radius)) *
+            Math.sin(theta + randomNumber(-0.1 * theta, 0.1 * theta)));
+
+    const boxes = [box];
+    for (let i = 1; i < boxNb; i++) {
+      theta += 2 * Math.PI / boxNb;
+      const newBox = box.clone("box" + i);
+      boxes.push(newBox);
+      newBox.position = new BABYLON.Vector3((radius + randomNumber(-0.5 * radius, 0.5 * radius)) * Math.cos(theta + randomNumber(-0.1 * theta, 0.1 * theta)),
+              boxSize/2,
+              (radius + randomNumber(-0.5 * radius, 0.5 * radius)) * Math.sin(theta + randomNumber(-0.1 * theta, 0.1 * theta)));
+    }
+
+
+
+
+    // 创建一个基准点
+    const base = new BABYLON.Mesh('pivot')
+    const headDiam = 1.5
+    const bodyDiam = 2
+    const head = BABYLON.MeshBuilder.CreateSphere(
+            'h',{diameter:headDiam}
+    )
+    head.parent = base
+    head.position.y = 0.5*(headDiam+bodyDiam)
+    base.position.y = 0.5*bodyDiam
+
+    const extra = .25
+    // 椭圆
+    base.ellipsoid = new BABYLON.Vector3(
+            0.5*bodyDiam,
+            0.5*(headDiam+bodyDiam),
+            0.5*bodyDiam
+    )
+    base.ellipsoid.addInPlace(new BABYLON.Vector3(extra,extra,extra))
+    const offsetY = .5*(headDiam+bodyDiam)-base.position.y
+    base.ellipsoidOffset = new BABYLON.Vector3(0,offsetY,0)
+
+    //
+    const a = base.ellipsoid.x
+    const b = base.ellipsoid.y
+    const points =[]
+    for (let theta = -Math.PI/2;theta<Math.PI/2;theta+=Math.PI/36){
+      points.push(
+              new BABYLON.Vector3(
+                      0,
+                      b*Math.sin(theta)+offsetY,
+                      a*Math.cos(theta)
+              )
+      )
+    }
+
+    const ellipse =[]
+    ellipse[0] = BABYLON.MeshBuilder.CreateLines('e',{points:points},scene)
+    ellipse[0].color = BABYLON.Color3.Red()
+    ellipse[0].parent = base
+
+    const steps = 12
+    const dTheta = 2*Math.PI/steps
+    for(let i=1;i<steps;i++){
+      ellipse[i] = ellipse[0].clone('el'+i)
+      ellipse[i].parent = base
+      ellipse[i].rotation.y = i*dTheta
+    }
+
+    const forward = new BABYLON.Vector3(0,0,1)
+    let angle = 0
+    let matrix = BABYLON.Matrix.Identity()
+    let line = BABYLON.MeshBuilder.CreateLines("f", {points:
+              [base.position.add(new BABYLON.Vector3(0, 3, 0)),
+                base.position.add(new BABYLON.Vector3(0, 3, 0)).add(forward.scale(5))],
+      updatable: true});
+
+    scene.onKeyboardObservable.add((kbInfo) => {
+      switch (kbInfo.type) {
+        case BABYLON.KeyboardEventTypes.KEYDOWN:
+          switch (kbInfo.event.key) {
+            case "a":
+            case "A":
+              angle -= 0.1;
+              BABYLON.Matrix.RotationYToRef(angle, matrix);
+              BABYLON.Vector3.TransformNormalToRef(forward, matrix, forward);
+              base.rotation.y = angle;
+              break
+            case "d":
+            case "D":
+              angle += 0.1;
+              BABYLON.Matrix.RotationYToRef(angle, matrix);
+              BABYLON.Vector3.TransformNormalToRef(forward, matrix, forward);
+              base.rotation.y = angle;
+              break
+            case "w":
+            case "W":
+              base.moveWithCollisions(forward.scale(0.1));
+              break
+            case "s":
+            case "S":
+              base.moveWithCollisions(forward.scale(-0.1));
+              break
+          }
+          break;
+      }
+      line = BABYLON.MeshBuilder.CreateLines("f", {points: [base.position.add(new BABYLON.Vector3(0, 3, 0)), base.position.add(new BABYLON.Vector3(0, 3, 0)).add(forward.scale(3))], instance:line});
+    })
+
+
+
+    return scene
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
