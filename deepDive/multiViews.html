@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>multiViews</title>
+
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    scene.clearColor = new BABYLON.Color4(.5,.5,.5,1)
+    const camera1 = new BABYLON.ArcRotateCamera(
+      'camera1',
+      3*Math.PI/8,
+      3*Math.PI/8,
+      15,
+      new BABYLON.Vector3(0,2,0)
+    )
+    camera1.attachControl(canvas,true)
+
+
+    const camera2 = new BABYLON.ArcRotateCamera(
+      'camera1',
+      -5*Math.PI/8,
+      -5*Math.PI/8,
+      1,
+      new BABYLON.Vector3(0,2,0)
+    )
+    camera2.attachControl(canvas,true)
+
+
+    // 屏幕左下角是00
+    // 设置两个视口范围
+    // 这是较小的 柱体
+    camera1.viewport = new BABYLON.Viewport(
+      0, // left
+      .5, // top
+      1, // width
+      .5 //height
+    )
+
+    // 这是较大的柱体
+    camera2.viewport = new BABYLON.Viewport(
+      0, // left
+      0, // top
+      1, // width
+      .5 //height
+    )
+
+    // 激活这两相机
+    scene.activeCameras.push(camera1,camera2)
+
+    const light1 = new BABYLON.HemisphericLight(
+      'light1',
+      new BABYLON.Vector3(1,.5,0),
+      scene
+    )
+    light1.intensity = 0.7
+    const light2 = new BABYLON.HemisphericLight(
+      'light2',
+      new BABYLON.Vector3(-1,-.5,0),
+      scene
+    )
+    light2.intensity = 0.8
+
+
+    // 创建立方体
+    const faceColors = []
+    faceColors[0] = BABYLON.Color3.Blue()
+    faceColors[1] = BABYLON.Color3.White()
+    faceColors[2] = BABYLON.Color3.Red()
+    faceColors[3] = BABYLON.Color3.Black()
+    faceColors[4] = BABYLON.Color3.Green()
+    faceColors[5] = BABYLON.Color3.Yellow()
+
+    const box = BABYLON.MeshBuilder.CreateBox(
+      'box',
+      {faceColors:faceColors}
+    )
+
+
+
+
+
+
+
+
+
+
+    new BABYLON.HemisphericLight(
+      'light',
+      new BABYLON.Vector3(1,1,0),
+      scene
+    )
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
