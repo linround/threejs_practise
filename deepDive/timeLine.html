@@ -168,11 +168,12 @@
           hiddenVideo.loop = false
 
           hiddenVideo.onloadeddata = ()=>{
-            const texture = resizer.getResizedTexture(hiddenVideo,{width:120,height:120})
             if(time===0){
-              done(texture)
+              done(resizer.getResizedTexture(hiddenVideo,{width:120,height:120}))
             } else {
+              // 根据播放位置的变化设置纹理
               hiddenVideo.onseeked = ()=>{
+                const texture = resizer.getResizedTexture(hiddenVideo,{width:120,height:120})
                 done(texture)
               }
               hiddenVideo.currentTime = time
