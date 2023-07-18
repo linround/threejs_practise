@@ -111,5 +111,10 @@ UV 这里是指u,v纹理贴图坐标的简称；UV就是将图像上每一个点
 # 有趣的demo
 - [第一人称射击类游戏](https://github.com/BeardScript/RogueFPSExample)；[here](https://rogueengine.io/examples)
 - [sho1374k](https://github.com/sho1374k)
+
+
+# 待完成
+- [关于video标签](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video)
+
 # 总结
 - 再伟大的艺术大师也不可能仅仅通过按几个按钮或者随便刷几笔就做出惊人的艺术作品来，相反，他们也要经过大量的学习与训练，包括：人体结构，合成，灯光，动画原理等等等等；

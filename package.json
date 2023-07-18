@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babylonjs/controls": "^2.0.0-alpha.1",
     "babylonjs": "^6.11.2",
     "babylonjs-gui": "^6.11.2",
     "earcut": "^2.2.4",
