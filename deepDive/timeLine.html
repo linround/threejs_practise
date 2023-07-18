@@ -161,7 +161,7 @@
         getThumbnailCallback(time,done){
           const hiddenVideo = document.createElement('video')
           document.body.append(hiddenVideo)
-          // hiddenVideo.style.display = 'none'
+          hiddenVideo.style.display = 'none'
           hiddenVideo.setAttribute('playsinline','')
           hiddenVideo.muted = true
           hiddenVideo.autoplay = navigator.userAgent.indexOf('Edge')>0?false:true
