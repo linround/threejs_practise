@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>imageFilter</title>
+</head>
+<body>
+<div class="title">
+    该演示展示了一个图像过滤器控件，利用 WebGL 对图像应用一些效果
+</div>
+<div class="subTitle">
+    <p>最大的优势之一是它完全依赖 WebGL 来加速处理，否则在 CPU 上执行可能会非常昂贵</p>
+</div>
+
+
+<div class="control">
+    <button id="startProcessingButton">Start Processing</button>
+</div>
+<div style="display: flex;flex-wrap: wrap">
+
+    <div  style="display: flex">
+        <div class="before1">
+            <img id="beforePicture1" width="512" height="512"/>
+        </div>
+        <div class="after1">
+            <canvas id="afterPicture1" width="512" height="512"></canvas>
+        </div>
+    </div>
+    <div  style="display: flex">
+        <div class="before2">
+            <canvas id="beforePicture2" width="512" height="512"/>
+        </div>
+        <div class="after2">
+            <canvas id="afterPicture2" width="512" height="512"></canvas>
+        </div>
+    </div>
+    <div style="display: flex">
+        <div class="before3">
+            <img id="beforePicture3" width="512" height="512"/>
+        </div>
+        <div class="after3">
+            <canvas id="afterPicture3" width="512" height="512"></canvas>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+
+<script type="module">
+    import {ImageFilter} from "@babylonjs/controls/dist/src/imageFilter";
+    import {BlackAndWhitePostProcess,
+    ImageProcessingPostProcess,
+      ImageProcessingConfiguration,
+      EffectWrapper,
+      Texture,
+      Engine,
+    } from "@babylonjs/core";
+
+
+    const beforePicture1 = document.getElementById('beforePicture1')
+    const beforePicture2 = document.getElementById('beforePicture2')
+    const beforePicture3 = document.getElementById('beforePicture3')
+
+    const afterPicture1 = document.getElementById('afterPicture1')
+    const afterPicture2 = document.getElementById('afterPicture2')
+    const afterPicture3 = document.getElementById('afterPicture3')
+
+    const startProcessingButton = document.getElementById('startProcessingButton')
+
+
+    const imageToProcess = './assets/loading.png'
+
+
+    function oneTimeFilterWithPostProcess(){
+      const engine = new Engine(afterPicture3,false)
+      const imageProcessingFilter = new ImageFilter(engine)
+
+      const imageProcessingConfiguration = new ImageProcessingConfiguration()
+      imageProcessingConfiguration.colorCurvesEnabled = true
+      imageProcessingConfiguration.colorCurves.globalSaturation = 80
+      const imageProcessingPostProcess = new ImageProcessingPostProcess(
+        'ip',1,null,undefined,engine,undefined,undefined,imageProcessingConfiguration
+      )
+      startProcessingButton.addEventListener('click',()=>{
+        imageProcessingFilter.filter(imageToProcess,imageProcessingPostProcess)
+      })
+
+
+    }
+
+
+    function oneTimeFilterFromCanvas() {
+      const engine = new Engine(afterPicture2, false);
+      const backAndWhiteFilter = new ImageFilter(engine);
+      const blackAndWhitePostProcess = new BlackAndWhitePostProcess("bw", 1, null, undefined, engine);
+
+      const image = document.createElement('img');
+      image.src = imageToProcess;
+      image.addEventListener('load', e => {
+        const ctx = beforePicture2.getContext("2d");
+        ctx.drawImage(image, 128, 128, 256, 256);
+        backAndWhiteFilter.filter(beforePicture2, blackAndWhitePostProcess);
+      });
+    }
+
+    function realTimeRenderAndCustomShader() {
+      const engine = new Engine(afterPicture1, false);
+      const customFilter = new ImageFilter(engine);
+      const customEffectWrapper = new EffectWrapper({
+        name: "Custom",
+        engine: customFilter.engine,
+        fragmentShader: `
+            // 全局变量
+            varying vec2 vUV;
+
+            // 默认 采样器
+            uniform sampler2D textureSampler;
+
+            // 自定义 uniforms
+            uniform sampler2D otherTexture;
+            uniform vec3 colorOffset;
+
+            const vec2 scale = vec2(0.25, 1.);
+
+            void main(void)
+            {
+                gl_FragColor = texture2D(textureSampler, vUV);
+
+                // Swizzle channels
+                float r = gl_FragColor.r;
+                gl_FragColor.r = gl_FragColor.b;
+                gl_FragColor.b = r;
+                gl_FragColor.rgb += clamp(colorOffset, 0., 1.);
+
+                gl_FragColor.rgb *= texture2D(otherTexture, vUV * scale).rgb;
+            }
+        `,
+        samplerNames: ["textureSampler", "otherTexture"],
+        uniformNames: ["colorOffset"],
+      });
+
+      const mainTexture = new Texture("./assets/loading.png", engine);
+      const otherTexture = new Texture("./assets/timeline.png", engine);
+      let time = 0;
+
+      engine.runRenderLoop(() => {
+        if (!otherTexture.isReady()) {
+          return;
+        }
+
+        time += engine.getDeltaTime() / 1000;
+        customEffectWrapper.effect.setTexture("otherTexture", otherTexture);
+        customEffectWrapper.effect.setFloat3("colorOffset", Math.cos(time) * 0.5 + 0.5, 0, Math.sin(time) * 0.5 + 0.5);
+
+        customFilter.render(mainTexture, customEffectWrapper);
+      });
+
+    }
+
+    function main() {
+      beforePicture1.src = imageToProcess;
+      beforePicture3.src = imageToProcess;
+
+      oneTimeFilterWithPostProcess();
+      oneTimeFilterFromCanvas();
+      realTimeRenderAndCustomShader();
+    }
+
+    main();
+
+</script>
