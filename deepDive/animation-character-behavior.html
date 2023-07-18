@@ -87,6 +87,21 @@
         helper.setMainColor(BABYLON.Color3.Gray());
         helper.ground.position.y += 0.01;
 
+
+        const backgroundMaterial = new BABYLON.BackgroundMaterial(
+          'backgroundMaterial',
+          scene
+        )
+        const mirror = new BABYLON.MirrorTexture('mirror',512,scene)
+        mirror.clearColor = new BABYLON.Color4(0,1,1,1)
+        mirror.mirrorPlane = new BABYLON.Plane(0,-1,0,0)
+        mirror.renderList.push(hero)
+        backgroundMaterial.reflectionTexture = mirror
+        helper.ground.material = backgroundMaterial
+
+
+
+
         const idleAnim = scene.beginWeightedAnimation(
           skeleton,0,89,1,true
         )
