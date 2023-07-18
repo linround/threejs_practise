@@ -97,7 +97,15 @@
         mirror.mirrorPlane = new BABYLON.Plane(0,-1,0,0)
         mirror.renderList.push(hero)
         backgroundMaterial.reflectionTexture = mirror
+
+        backgroundMaterial.reflectionFresnel = true;
+        backgroundMaterial.shadowLevel = 0.5;
+
+        backgroundMaterial.useRGBColor = false;
+        backgroundMaterial.primaryColor = BABYLON.Color3.Gray();
         helper.ground.material = backgroundMaterial
+
+
 
 
 
