@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>resizer</title>
+</head>
+<body>
+<div class="title">
+  该演示展示了一个利用 WebGL 来加速调整图像大小的缩放控件
+</div>
+<div class="subTitle">
+  <p>最大的优点之一是输出可以直接用作Babylonjs的纹理</p>
+  <p>这样如果您需要调整缩略图大小，它们不需要 canvas2D 拥有的任何额外副本</p>
+</div>
+
+<div class="control">
+  <button id="startResizingButton">Start Resizing</button>
+</div>
+<div style="display: flex">
+
+  <div class="before">
+    <img id="beforePicture" width="512" height="512"/>
+  </div>
+  <div class="after1">
+    <canvas id="afterPicture1" width="256" height="256"></canvas>
+  </div>
+  <div class="after2">
+    <canvas id="afterPicture2" width="128" height="128"></canvas>
+  </div>
+  <div class="after3">
+    <canvas id="afterPicture3" width="64" height="64"></canvas>
+  </div>
+  <div class="after4">
+    <canvas id="afterPicture4" width="32" height="32"></canvas>
+  </div>
+</div>
+</body>
+</html>
+<script type="module">
+  import {Resizer} from "@babylonjs/controls";
+  const beforePicture = document.getElementById('beforePicture')
+  const afterPicture1 = document.getElementById('afterPicture1')
+  const afterPicture2 = document.getElementById('afterPicture2')
+  const afterPicture3 = document.getElementById('afterPicture3')
+  const afterPicture4 = document.getElementById('afterPicture4')
+
+  const startResizingButton = document.getElementById('startResizingButton')
+
+  const imageToResize = './assets/loading.png'
+  function main() {
+    beforePicture.src = imageToResize
+    // 创建多个resizer
+    const resizer1 = new Resizer(afterPicture1)
+    const resizer2 = new Resizer(afterPicture2)
+    const resizer3 = new Resizer(afterPicture3)
+    const resizer4 = new Resizer(afterPicture4)
+    startResizingButton.addEventListener('click',()=>{
+      resizer1.resize(imageToResize)
+      resizer2.resize(imageToResize)
+      resizer3.resize(imageToResize)
+      resizer4.resize(imageToResize)
+    })
+
+  }
+  main()
+</script>
