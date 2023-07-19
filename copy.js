@@ -1,7 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const { throws } = require('assert')
-const { error, info } = require('console')
+const { error } = require('console')
 
 
 const copy = (sd, td) => {
@@ -43,7 +42,7 @@ const run = async (sourceDir,targetDir) => {
   console.log("耗时:", ((endTime - startTime) / 1000).toFixed(2) + "s");
 }
 
-Promise.all(
+await Promise.all(
   [
     run('./manual/resources','./dist/manual/resources'),
     run('./deepDive/assets','./dist/deepDive/assets'),
