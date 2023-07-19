@@ -79,7 +79,10 @@
         maxHeight:10
       }
     )
-    const groundMat = new BABYLON.StandardMaterial('groundMat',scene)
+
+    const groundMat = new BABYLON.TriPlanarMaterial('groundMat',scene)
+
+    // const groundMat = new BABYLON.StandardMaterial('groundMat',scene)
     groundMat.diffuseTextureX = new BABYLON.Texture('./files/sand.jpg',scene)
     groundMat.diffuseTextureZ = new BABYLON.Texture('./files/sand.jpg',scene)
     groundMat.diffuseTextureY = new BABYLON.Texture('./files/rock.png',scene)
