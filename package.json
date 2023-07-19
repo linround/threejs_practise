@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npx vite --port 4000 --host 0.0.0.0",
     "start": "npx vite --port 4000 --host 0.0.0.0",
-    "build": "npx vite build --config vite.config.js",
+    "build": "npx vite build --config vite.config.js  && node copy.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

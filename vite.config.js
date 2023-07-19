@@ -1,6 +1,7 @@
 const  fs = require('fs')
 
 
+
 // 这里只配置了html文件的打包处理
 // 对于某些资源文件，需要复制到对应路径下
 const paths = {}
