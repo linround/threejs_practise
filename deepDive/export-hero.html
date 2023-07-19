@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>export-hero</title>
+
+  <style>
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .buttons{
+      position: fixed;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="buttons">
+  <button id="exportGLB">导出glb文件</button>
+</div>
+<canvas id="renderCanvas"></canvas>
+
+</body>
+</html>
+<script type="module">
+  import * as BABYLON from 'babylonjs'
+  import * as Exporter from 'babylonjs-serializers'
+  const canvas = document.getElementById('renderCanvas')
+  const engine = new BABYLON.Engine(canvas,true)
+  const createScene = function (){
+    const scene = new BABYLON.Scene(engine)
+    const camera = new BABYLON.ArcRotateCamera(
+            'camera',
+            Math.PI/2,
+            Math.PI/4,
+            5,
+            new BABYLON.Vector3(0,1,0),
+            scene
+    )
+    new BABYLON.HemisphericLight(
+            'light',
+            new BABYLON.Vector3(1,1,0),
+            scene
+    )
+    camera.attachControl(canvas,true)
+    camera.lowerRadiusLimit = 2
+    camera.upperRadiusLimit = 20
+    camera.wheelDeltaPercentage = 0.01
+
+
+
+
+    BABYLON.SceneLoader.ImportMesh(
+            '',
+            './files/',
+            'dummy2.babylon',
+            scene,
+            (newMeshes,particleSystems,skeletons)=>{
+
+
+              const glbButton = document.getElementById('exportGLB')
+              glbButton.addEventListener('click',()=>{
+                Exporter.GLTF2Export.GLBAsync(scene,'character').then(glb=>{
+                  glb.downloadFiles()
+                })
+              })
+            }
+    )
+
+
+    return scene
+
+
+  }
+  const scene = createScene()
+  engine.runRenderLoop(function () {
+    scene.render()
+  })
+  window.addEventListener('resize',function (){
+    engine.resize()
+  })
+
+
+</script>
